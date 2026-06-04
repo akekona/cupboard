@@ -4,6 +4,7 @@ server/target/
 *.jar
 *.war
 server/.mvn/
+server/src/main/resources/application.properties
 server/src/main/resources/application-local.properties
 server/src/main/resources/application-secrets.properties
 

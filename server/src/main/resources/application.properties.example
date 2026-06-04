@@ -1,0 +1,31 @@
+spring.application.name=api
+
+# --- Database (Neon PostgreSQL) ---
+# Pooled connection string (from Neon dashboard → Connection Details → Pooled)
+spring.datasource.url=jdbc:postgresql://<host>-pooler.<region>.aws.neon.tech/<dbname>?sslmode=require&channelBinding=require
+spring.datasource.username=<neon-username>
+spring.datasource.password=<neon-password>
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# --- Flyway ---
+# Unpooled connection string (from Neon dashboard → Connection Details → Direct)
+spring.flyway.enabled=true
+spring.flyway.locations=classpath:db/migration
+spring.flyway.url=jdbc:postgresql://<host>.<region>.aws.neon.tech/<dbname>?sslmode=require&channelBinding=require
+spring.flyway.user=<neon-username>
+spring.flyway.password=<neon-password>
+
+# --- JPA / Hibernate ---
+spring.jpa.hibernate.ddl-auto=none
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.format_sql=true
+
+# --- JWT ---
+jwt.secret=<256-bit-secret>
+jwt.expiration-ms=86400000
+
+# --- Stripe ---
+stripe.secret-key=sk_test_<your-stripe-key>
+
+# --- Claude API ---
+claude.api-key=<your-claude-api-key>
