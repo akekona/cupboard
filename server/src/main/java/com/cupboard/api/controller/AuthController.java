@@ -19,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -47,12 +48,18 @@ public class AuthController {
         }
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
-        String token = jwtUtil.generateToken(userDetails);
         User user = userRepository.findByEmail(request.getEmail()).orElseThrow();
 
         List<String> roles = user.getRoles().stream()
                 .map(role -> role.getName())
                 .toList();
+
+        Map<String, Object> claims = Map.of(
+                "firstName", user.getFirstName(),
+                "lastName", user.getLastName(),
+                "roles", roles
+        );
+        String token = jwtUtil.generateToken(userDetails, claims);
 
         return ResponseEntity.ok(new LoginResponse(token, user.getEmail(), user.getFirstName(), user.getLastName(), roles));
     }

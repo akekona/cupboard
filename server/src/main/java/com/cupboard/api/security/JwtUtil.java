@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Map;
 
 @Component
 public class JwtUtil {
@@ -22,7 +23,12 @@ public class JwtUtil {
     private long expirationMs;
 
     public String generateToken(UserDetails userDetails) {
+        return generateToken(userDetails, Map.of());
+    }
+
+    public String generateToken(UserDetails userDetails, Map<String, Object> extraClaims) {
         return Jwts.builder()
+                .claims(extraClaims)
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
