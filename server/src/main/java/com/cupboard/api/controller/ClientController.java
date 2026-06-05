@@ -24,6 +24,11 @@ public class ClientController {
         return ApiResponse.ok(clientService.getAllClients());
     }
 
+    @GetMapping("/recent-active")
+    public ApiResponse<List<ClientSummary>> getRecentActive() {
+        return ApiResponse.ok(clientService.getRecentActiveClients());
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<ClientDetailResponse> getById(@PathVariable Long id) {
         return ApiResponse.ok(clientService.getClientById(id));

@@ -213,6 +213,56 @@ class ClientControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    // ── GET /api/clients/recent-active ───────────────────────────────────────
+
+    @Test
+    void getRecentActive_returnsAtMostTenClients() throws Exception {
+        String body = mockMvc.perform(get("/api/clients/recent-active")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isArray())
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode data = objectMapper.readTree(body).get("data");
+        assertThat(data.size()).isLessThanOrEqualTo(10);
+    }
+
+    @Test
+    void getRecentActive_onlyReturnsActiveClients() throws Exception {
+        String body = mockMvc.perform(get("/api/clients/recent-active")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode data = objectMapper.readTree(body).get("data");
+        // Stumptown Honolulu (id=4) is SUSPENDED — must not appear
+        for (JsonNode c : data) {
+            assertThat(c.get("accountStatus").asText()).isEqualTo("ACTIVE");
+        }
+    }
+
+    @Test
+    void getRecentActive_orderedByOrderCountDescending() throws Exception {
+        String body = mockMvc.perform(get("/api/clients/recent-active")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode data = objectMapper.readTree(body).get("data");
+        // Verify order counts are non-increasing
+        long prevCount = Long.MAX_VALUE;
+        for (JsonNode c : data) {
+            long count = c.get("orderCount").asLong();
+            assertThat(count).isLessThanOrEqualTo(prevCount);
+            prevCount = count;
+        }
+    }
+
+    @Test
+    void getRecentActive_unauthenticated_returns401() throws Exception {
+        mockMvc.perform(get("/api/clients/recent-active"))
+                .andExpect(status().isUnauthorized());
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private String adminToken() throws Exception {

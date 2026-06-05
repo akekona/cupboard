@@ -8,12 +8,16 @@ import com.cupboard.api.exception.EntityNotFoundException;
 import com.cupboard.api.repository.ClientRepository;
 import com.cupboard.api.repository.ClientSummaryRepository;
 import com.cupboard.api.repository.OrderRepository;
+import com.cupboard.api.repository.projection.ClientActiveProjection;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class ClientService {
@@ -30,6 +34,29 @@ public class ClientService {
     @Transactional(readOnly = true)
     public List<ClientSummary> getAllClients() {
         return clientSummaryRepository.findAllByDeletedAtIsNull();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ClientSummary> getRecentActiveClients() {
+        LocalDateTime threeMonthsAgo = LocalDateTime.now().minusDays(90);
+
+        List<ClientActiveProjection> activeClients =
+                clientRepository.findMostActiveClientIds(threeMonthsAgo);
+
+        List<Long> orderedIds = activeClients.stream()
+                .map(ClientActiveProjection::getId)
+                .toList();
+
+        if (orderedIds.isEmpty()) return List.of();
+
+        Map<Long, ClientSummary> summaryMap = clientSummaryRepository.findAllById(orderedIds)
+                .stream()
+                .collect(Collectors.toMap(ClientSummary::getId, s -> s));
+
+        return orderedIds.stream()
+                .map(summaryMap::get)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     @Transactional(readOnly = true)

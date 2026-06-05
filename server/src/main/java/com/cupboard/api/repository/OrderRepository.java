@@ -3,8 +3,10 @@ package com.cupboard.api.repository;
 import com.cupboard.api.entity.Order;
 import com.cupboard.api.enums.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +47,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByIdWithDetails(@Param("id") Long id);
 
     @Modifying(clearAutomatically = true)
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     @Query("DELETE FROM Order o WHERE o.id = :id")
     void deleteOrderById(@Param("id") Long id);
 

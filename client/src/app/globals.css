@@ -2,6 +2,20 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Applied outside any layer so it wins over resets from imports above */
+button:not(:disabled) { cursor: pointer; }
+button:disabled       { cursor: not-allowed; }
+
+/* Hide native number input spinners */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
