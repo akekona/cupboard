@@ -49,12 +49,10 @@ public class ProductService {
     @Transactional
     public ProductResponse updateProduct(Long id, UpdateProductRequest req) {
         Product p = findOrThrow(id);
-        if (req.getSku() != null)              p.setSku(req.getSku());
         if (req.getName() != null)             p.setName(req.getName());
         if (req.getDescription() != null)      p.setDescription(req.getDescription());
         if (req.getCategory() != null)         p.setCategory(req.getCategory());
         if (req.getUnitPrice() != null)        p.setUnitPrice(req.getUnitPrice());
-        if (req.getCurrency() != null)         p.setCurrency(req.getCurrency());
         if (req.getUnit() != null)             p.setUnit(req.getUnit());
         if (req.getStockQuantity() != null)    p.setStockQuantity(req.getStockQuantity());
         if (req.getReorderThreshold() != null) p.setReorderThreshold(req.getReorderThreshold());

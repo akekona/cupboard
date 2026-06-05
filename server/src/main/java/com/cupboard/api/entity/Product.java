@@ -35,7 +35,7 @@ public class Product {
     @Column(name = "unit_price", nullable = false)
     private Long unitPrice;
 
-    @Column(nullable = false, length = 3)
+    @Column(nullable = false, length = 3, updatable = false)
     private String currency = "USD";
 
     @Column(nullable = false, length = 50)

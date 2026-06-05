@@ -11,7 +11,6 @@ public class UpdateProductRequest {
     private String description;
     private String category;
     private Long unitPrice;
-    private String currency;
     private String unit;
     private Integer stockQuantity;
     private Integer reorderThreshold;
