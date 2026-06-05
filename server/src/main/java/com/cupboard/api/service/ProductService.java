@@ -2,6 +2,7 @@ package com.cupboard.api.service;
 
 import com.cupboard.api.dto.product.*;
 import com.cupboard.api.entity.Product;
+import com.cupboard.api.enums.Currency;
 import com.cupboard.api.exception.EntityNotFoundException;
 import com.cupboard.api.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +38,7 @@ public class ProductService {
         p.setDescription(req.getDescription());
         p.setCategory(req.getCategory());
         p.setUnitPrice(req.getUnitPrice());
-        p.setCurrency(req.getCurrency() != null ? req.getCurrency() : "USD");
+        p.setCurrency(req.getCurrency() != null ? req.getCurrency() : Currency.USD);
         p.setUnit(req.getUnit());
         p.setStockQuantity(req.getStockQuantity());
         p.setReorderThreshold(req.getReorderThreshold());

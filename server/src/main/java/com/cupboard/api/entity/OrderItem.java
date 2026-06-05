@@ -1,5 +1,6 @@
 package com.cupboard.api.entity;
 
+import com.cupboard.api.enums.Currency;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,6 +31,7 @@ public class OrderItem {
     @Column(name = "unit_price", nullable = false)
     private Long unitPrice;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 3)
-    private String currency = "USD";
+    private Currency currency = Currency.USD;
 }

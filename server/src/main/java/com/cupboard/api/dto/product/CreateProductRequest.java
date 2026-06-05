@@ -1,5 +1,6 @@
 package com.cupboard.api.dto.product;
 
+import com.cupboard.api.enums.Currency;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -25,7 +26,7 @@ public class CreateProductRequest {
     @Positive
     private Long unitPrice;
 
-    private String currency = "USD";
+    private Currency currency = Currency.USD;
 
     @NotBlank
     private String unit;

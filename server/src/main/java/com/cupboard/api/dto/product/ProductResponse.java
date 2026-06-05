@@ -1,5 +1,7 @@
 package com.cupboard.api.dto.product;
 
+import com.cupboard.api.enums.Currency;
+
 import java.util.List;
 
 public record ProductResponse(
@@ -9,7 +11,7 @@ public record ProductResponse(
         String description,
         String category,
         Long unitPrice,
-        String currency,
+        Currency currency,
         String unit,
         int stockQuantity,
         int reorderThreshold,
