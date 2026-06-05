@@ -24,8 +24,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
-        if (user.getDeletedAt() != null) {
-            throw new UsernameNotFoundException("User account has been deleted");
+        if (user.getDeletedAt() != null || !"ACTIVE".equals(user.getAccountStatus())) {
+            throw new UsernameNotFoundException("User account is not active");
         }
 
         List<SimpleGrantedAuthority> authorities = user.getRoles().stream()
@@ -35,7 +35,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPasswordHash() != null ? user.getPasswordHash() : "",
-                user.isActive(),
+                "ACTIVE".equals(user.getAccountStatus()),
                 true, true, true,
                 authorities
         );

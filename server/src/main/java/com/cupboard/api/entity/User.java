@@ -33,8 +33,8 @@ public class User {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
-    @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    @Column(name = "account_status", nullable = false, length = 20)
+    private String accountStatus = "ACTIVE";
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
