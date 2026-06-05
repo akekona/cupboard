@@ -24,3 +24,7 @@ client/.env.production.local
 .vscode/
 *.log
 *.env
+
+# Agents and Claude Code
+.claude/
+.agents/
