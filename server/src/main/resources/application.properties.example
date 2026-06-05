@@ -21,11 +21,13 @@ spring.jpa.show-sql=false
 spring.jpa.properties.hibernate.format_sql=true
 
 # --- JWT ---
-jwt.secret=<256-bit-secret>
+jwt.secret=YZ0mRbLSsUHuoK+CnSjJ8kdwztbQcy7sm21JDvHy48Q=
 jwt.expiration-ms=86400000
 
 # --- Stripe ---
-stripe.secret-key=sk_test_<your-stripe-key>
+stripe.publishable-key=<your-stripe-publishable-key>
+stripe.secret-key=<your-stripe-secret-key>
+stripe.webhook-secret=<your-stripe-webhook-secret>
 
 # --- Claude API ---
 claude.api-key=<your-claude-api-key>
