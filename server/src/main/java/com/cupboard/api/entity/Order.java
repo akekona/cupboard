@@ -1,6 +1,7 @@
 package com.cupboard.api.entity;
 
 import com.cupboard.api.enums.Currency;
+import com.cupboard.api.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,8 +31,9 @@ public class Order {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String status = "DRAFT";
+    private OrderStatus status = OrderStatus.DRAFT;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 3)
