@@ -31,3 +31,8 @@ stripe.webhook-secret=<your-stripe-webhook-secret>
 
 # --- Claude API ---
 claude.api-key=<your-claude-api-key>
+
+# --- Logging ---
+logging.level.com.cupboard=DEBUG
+logging.level.org.springframework.web=DEBUG
+logging.level.org.hibernate.SQL=DEBUG
