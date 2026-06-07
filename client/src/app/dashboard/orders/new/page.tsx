@@ -151,7 +151,7 @@ export default function NewOrderPage() {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="page-container max-w-5xl">
       <WizardStepper step={step} />
 
       {/* ── Step 1: Select client ────────────────────────────────────────── */}

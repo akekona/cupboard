@@ -6,6 +6,14 @@
 button:not(:disabled) { cursor: pointer; }
 button:disabled       { cursor: not-allowed; }
 
+.page-container {
+  @apply px-4 py-4 md:px-6 md:py-6 max-w-screen-2xl mx-auto;
+}
+
+.page-header {
+  @apply flex items-center justify-between mb-4 md:mb-6 flex-wrap gap-3;
+}
+
 /* Hide native number input spinners */
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {

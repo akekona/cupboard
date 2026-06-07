@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import Sidebar from '@/components/dashboard/sidebar'
+import { DashboardShell } from '@/components/layout/DashboardShell'
 import type { AuthUser } from '@/types/auth'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -21,11 +21,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar user={user} />
-      <main className="flex-1 bg-gray-50 overflow-y-auto">
-        {children}
-      </main>
-    </div>
+    <DashboardShell user={user}>
+      {children}
+    </DashboardShell>
   )
 }
