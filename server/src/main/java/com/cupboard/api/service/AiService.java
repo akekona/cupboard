@@ -23,7 +23,8 @@ public class AiService {
     private String claudeApiKey;
 
     @Autowired private ProductRepository productRepository;
-    @Autowired private ObjectMapper objectMapper;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Toggle this to true when Claude API credits are available
     private static final boolean USE_LIVE_AI = false;
