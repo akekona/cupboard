@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { getSuppliers } from '@/lib/api/catalog'
-import { getAuthUser, isAdmin } from '@/lib/auth'
+import { getAuthUser, isAdmin, redirectUnauthorized } from '@/lib/auth'
 import { AddSupplierModal } from '@/components/modals/AddSupplierModal'
 import { PageHeader } from '@/components/common/PageHeader'
 import { SuppliersGrid } from '@/components/pages/suppliers/SuppliersGrid'
@@ -19,7 +19,7 @@ export default function SuppliersPage() {
   const [editing, setEditing] = useState<Supplier | null>(null)
 
   useEffect(() => {
-    if (!admin) { router.replace('/dashboard'); return }
+    if (!admin) { redirectUnauthorized(router); return }
     setLoading(true)
     getSuppliers().then(setSuppliers).catch(() => {}).finally(() => setLoading(false))
   }, [])

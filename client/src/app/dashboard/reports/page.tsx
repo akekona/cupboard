@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser, redirectUnauthorized } from '@/lib/auth'
 import { getReportsData } from '@/lib/api/dashboard'
 import { PageHeader } from '@/components/common/PageHeader'
 import { RevenueChart } from '@/components/pages/dashboard/RevenueChart'
@@ -29,7 +29,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!isAdminOrDev) { router.replace('/dashboard'); return }
+    if (!isAdminOrDev) { redirectUnauthorized(router); return }
     getReportsData().then(setData).catch(() => {}).finally(() => setLoading(false))
   }, [])
 

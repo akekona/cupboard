@@ -12,6 +12,7 @@ import { ConfirmModal } from '@/components/modals/ConfirmModal'
 import { StatusPill } from '@/components/common/StatusPill'
 import { ScrollableTable } from '@/components/common/ScrollableTable'
 import { ClientKpiRow } from '@/components/pages/clients/ClientKpiRow'
+import { NotFound } from '@/components/common/NotFound'
 import type { AccountStatus, ClientDetail } from '@/types/catalog'
 
 const STATUS_COLORS: Record<AccountStatus, string> = {
@@ -57,9 +58,8 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   }
 
   if (notFound) return (
-    <div className="page-container text-center py-20">
-      <p className="text-sm text-gray-400 mb-3">Client not found.</p>
-      <button onClick={() => router.push('/dashboard/clients')} className="text-sm text-[#3B6D11] hover:underline">← Back to clients</button>
+    <div className="page-container">
+      <NotFound title="Client not found" backHref="/dashboard/clients" backLabel="Back to clients" />
     </div>
   )
 

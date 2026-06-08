@@ -42,3 +42,7 @@ export function isAdmin(user: AuthUser): boolean {
 export function isStaff(user: AuthUser): boolean {
   return user.roles.includes('STAFF')
 }
+
+export function redirectUnauthorized(router: { push: (url: string) => void }): void {
+  router.push('/unauthorized')
+}
