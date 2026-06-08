@@ -8,6 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Pageable;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,4 +56,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.orderItems WHERE o.client.id = :clientId ORDER BY o.createdAt DESC")
     List<Order> findRecentByClientId(@Param("clientId") Long clientId);
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.createdAt >= :start AND o.createdAt < :end")
+    long countByCreatedAtBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("SELECT o FROM Order o JOIN FETCH o.client WHERE o.status IN :statuses ORDER BY o.createdAt DESC")
+    List<Order> findRecentByStatusIn(@Param("statuses") List<OrderStatus> statuses, Pageable pageable);
 }

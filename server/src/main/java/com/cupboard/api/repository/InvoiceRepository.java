@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -42,4 +44,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM Invoice i " +
             "WHERE i.status = 'PAID' AND i.paidAt >= :startOfMonth")
     Long getTotalPaidSince(@Param("startOfMonth") LocalDateTime startOfMonth);
+
+    @Query("SELECT i FROM Invoice i JOIN FETCH i.client WHERE i.status IN :statuses ORDER BY i.createdAt DESC")
+    List<Invoice> findRecentByStatusIn(@Param("statuses") List<InvoiceStatus> statuses, Pageable pageable);
 }

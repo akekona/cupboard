@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -18,10 +20,21 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             "WHERE p.status = 'SUCCEEDED' AND p.createdAt >= :startOfMonth")
     Long getCollectedSince(@Param("startOfMonth") LocalDateTime startOfMonth);
 
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p " +
+            "WHERE p.status = 'SUCCEEDED' AND p.createdAt >= :start AND p.createdAt < :end")
+    Long sumSucceededBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.status = 'PENDING'")
     Long getTotalPending();
 
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p " +
             "WHERE p.status = 'REFUNDED' AND p.createdAt >= :startOfMonth")
     Long getTotalRefundedSince(@Param("startOfMonth") LocalDateTime startOfMonth);
+
+    @Query("SELECT i.client.id, i.client.name, SUM(p.amount), COUNT(DISTINCT i.id) " +
+            "FROM Payment p JOIN p.invoice i " +
+            "WHERE p.status = 'SUCCEEDED' " +
+            "GROUP BY i.client.id, i.client.name " +
+            "ORDER BY SUM(p.amount) DESC")
+    List<Object[]> findTopClientsByRevenue(Pageable pageable);
 }
