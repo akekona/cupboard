@@ -11,6 +11,7 @@ import { StatusPill } from '@/components/common/StatusPill'
 import { FieldLabelText } from '@/components/ui/typography'
 import { OrderStepper } from '@/components/pages/orders/OrderStepper'
 import { OrderItemsTable } from '@/components/pages/orders/OrderItemsTable'
+import { NotFound } from '@/components/common/NotFound'
 import type { Order, OrderStatus } from '@/types/orders'
 
 const CONFIRM_CONFIG: Record<string, { title: string; description: string; variant: 'default' | 'danger'; confirmLabel: string }> = {
@@ -58,9 +59,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   }
 
   if (notFound) return (
-    <div className="page-container text-center py-20">
-      <p className="text-sm text-gray-400 mb-3">Order not found.</p>
-      <button onClick={() => router.push('/dashboard/orders')} className="text-sm text-[#3B6D11] hover:underline">← Back to orders</button>
+    <div className="page-container">
+      <NotFound title="Order not found" backHref="/dashboard/orders" backLabel="Back to orders" />
     </div>
   )
 

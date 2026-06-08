@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser, redirectUnauthorized } from '@/lib/auth'
 import { getUsers, deactivateUser, reactivateUser } from '@/lib/api/users'
 import { PageHeader } from '@/components/common/PageHeader'
 import { ConfirmModal } from '@/components/modals/ConfirmModal'
@@ -25,7 +25,7 @@ export default function UsersPage() {
   const [actionLoading, setActionLoading] = useState(false)
 
   useEffect(() => {
-    if (!isAdmin) { router.replace('/dashboard'); return }
+    if (!isAdmin) { redirectUnauthorized(router); return }
     load()
   }, [])
 

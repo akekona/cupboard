@@ -9,6 +9,7 @@ import { formatCurrency } from '@/lib/currency'
 import { AddSupplierModal } from '@/components/modals/AddSupplierModal'
 import { StatusPill } from '@/components/common/StatusPill'
 import { ScrollableTable } from '@/components/common/ScrollableTable'
+import { NotFound } from '@/components/common/NotFound'
 import type { Supplier } from '@/types/catalog'
 
 export default function SupplierDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,9 +31,8 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ id: s
   useEffect(() => { load() }, [id])
 
   if (notFound) return (
-    <div className="page-container text-center py-20">
-      <p className="text-sm text-gray-400 mb-3">Supplier not found.</p>
-      <button onClick={() => router.push('/dashboard/suppliers')} className="text-sm text-[#3B6D11] hover:underline">← Back to suppliers</button>
+    <div className="page-container">
+      <NotFound title="Supplier not found" backHref="/dashboard/suppliers" backLabel="Back to suppliers" />
     </div>
   )
 

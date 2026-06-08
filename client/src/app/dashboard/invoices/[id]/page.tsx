@@ -11,6 +11,7 @@ import { ConfirmModal } from '@/components/modals/ConfirmModal'
 import { StatusPill } from '@/components/common/StatusPill'
 import { FieldLabelText } from '@/components/ui/typography'
 import { InvoiceStepper } from '@/components/pages/invoices/InvoiceStepper'
+import { NotFound } from '@/components/common/NotFound'
 import type { Invoice, InvoiceStatus } from '@/types/invoices'
 
 type ActionKey = 'finalize' | 'send' | 'mark-paid' | 'refund'
@@ -60,9 +61,8 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
   }
 
   if (notFound) return (
-    <div className="page-container text-center py-20">
-      <p className="text-sm text-gray-400 mb-3">Invoice not found.</p>
-      <button onClick={() => router.push('/dashboard/invoices')} className="text-sm text-[#3B6D11] hover:underline">← Back to invoices</button>
+    <div className="page-container">
+      <NotFound title="Invoice not found" backHref="/dashboard/invoices" backLabel="Back to invoices" />
     </div>
   )
 

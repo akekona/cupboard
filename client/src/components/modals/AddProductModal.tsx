@@ -100,7 +100,7 @@ export function AddProductModal({ product, onClose, onSuccess }: Props) {
               value={form.sku}
               onChange={e => set('sku', e.target.value)}
               disabled={isEdit}
-              className={cx(errors.sku, isEdit && 'bg-gray-50 text-gray-500 cursor-not-allowed')}
+              className={cx(errors.sku, isEdit ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : undefined)}
               placeholder="COF-ETH-1KG"
             />
           </Field>
