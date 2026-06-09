@@ -5,7 +5,7 @@
 > control, order-to-invoice workflows, and AI-powered inventory 
 > insights.
 >
-> Demo: https://cupboard-pearl.vercel.app/login
+> Demo: https://cupboard-pearl.vercel.app/
 
 ---
 
@@ -226,9 +226,9 @@ stripe.webhook-secret=whsec_...
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | ashley@cupboard.io | password123 |
-| Staff | kai@cupboard.io | password123 |
-| Staff + Accounting | jamie@cupboard.io | password123 |
+| Admin | ashley@cupboard.test | password123 |
+| Staff | kai@cupboard.test | password123 |
+| Staff + Accounting | jamie@cupboard.test | password123 |
 
 ---
 
