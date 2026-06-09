@@ -1,12 +1,11 @@
-Create a comprehensive README.md in the root of the 
-cupboard repository.
-
 # Cupboard
 
 > Full-stack B2B supplier portal built with Java Spring Boot, 
 > Next.js, PostgreSQL, and Stripe. Features role-based access 
 > control, order-to-invoice workflows, and AI-powered inventory 
 > insights.
+>
+> Demo: https://cupboard-pearl.vercel.app/login
 
 ---
 
