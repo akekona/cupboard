@@ -3,6 +3,7 @@ package com.cupboard.api.dto.supplier;
 import com.cupboard.api.enums.Currency;
 
 public record SupplierProductInfo(
+        Long id,
         Long productId,
         String productName,
         String sku,

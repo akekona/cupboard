@@ -73,6 +73,7 @@ public class SupplierService {
     private SupplierResponse toResponse(Supplier s) {
         List<SupplierProductInfo> productInfos = s.getProductSuppliers().stream()
                 .map(ps -> new SupplierProductInfo(
+                        ps.getId(),
                         ps.getProduct().getId(),
                         ps.getProduct().getName(),
                         ps.getProduct().getSku(),

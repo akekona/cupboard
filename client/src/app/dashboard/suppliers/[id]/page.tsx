@@ -5,11 +5,9 @@ import { useRouter } from 'next/navigation'
 import { ChevronRight, Pencil } from 'lucide-react'
 import { getSupplierById } from '@/lib/api/catalog'
 import { getAuthUser, isAdmin } from '@/lib/auth'
-import { formatCurrency } from '@/lib/currency'
 import { AddSupplierModal } from '@/components/modals/AddSupplierModal'
-import { StatusPill } from '@/components/common/StatusPill'
-import { ScrollableTable } from '@/components/common/ScrollableTable'
 import { NotFound } from '@/components/common/NotFound'
+import { SupplierProductsTable } from '@/components/pages/suppliers/SupplierProductsTable'
 import type { Supplier } from '@/types/catalog'
 
 export default function SupplierDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -86,24 +84,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ id: s
             {supplier.products.length === 0 ? (
               <div className="px-5 py-10 text-center text-sm text-gray-400">No products linked yet.</div>
             ) : (
-              <ScrollableTable minWidth="500px">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b border-gray-100 bg-gray-50/50">
-                    {['Product', 'SKU', 'Our cost', 'Lead time', 'Preferred'].map(h => <th key={h} className="text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">{h}</th>)}
-                  </tr></thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {supplier.products.map(p => (
-                      <tr key={p.productId} className="hover:bg-gray-50/50">
-                        <td className="px-5 py-3 font-medium text-gray-900">{p.productName}</td>
-                        <td className="px-5 py-3 font-mono text-xs text-gray-400">{p.sku}</td>
-                        <td className="px-5 py-3 text-gray-700">{formatCurrency(p.costPrice, p.currency)}</td>
-                        <td className="px-5 py-3 text-gray-600">{p.leadTimeDays} day{p.leadTimeDays !== 1 ? 's' : ''}</td>
-                        <td className="px-5 py-3">{p.isPreferred && <StatusPill status="Preferred" colorClass="bg-[#EAF3DE] text-[#3B6D11]" />}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </ScrollableTable>
+              <SupplierProductsTable products={supplier.products} isAdmin={admin} />
             )}
           </div>
         </div>

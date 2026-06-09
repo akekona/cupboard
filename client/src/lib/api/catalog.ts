@@ -54,6 +54,12 @@ export const updateProduct = (id: number, data: Record<string, unknown>) =>
 export const deleteProduct = (id: number) =>
   api.delete<void>(`/api/products/${id}`)
 
+// ── Product Suppliers ─────────────────────────────────────────────────────────
+
+export const setProductSupplierPreferred = (productSupplierId: number, preferred: boolean) =>
+  unwrap(api.patch<ApiResponse<void>>(
+    `/api/product-suppliers/${productSupplierId}/preferred?preferred=${preferred}`, {}))
+
 // ── Suppliers ─────────────────────────────────────────────────────────────────
 
 export const getSuppliers = () =>
