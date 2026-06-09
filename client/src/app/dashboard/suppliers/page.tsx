@@ -12,14 +12,16 @@ import type { Supplier } from '@/types/catalog'
 
 export default function SuppliersPage() {
   const router = useRouter()
-  const admin = isAdmin(getAuthUser() ?? { roles: [] } as never)
+  const [admin, setAdmin] = useState(false)
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<Supplier | null>(null)
 
   useEffect(() => {
-    if (!admin) { redirectUnauthorized(router); return }
+    const a = isAdmin(getAuthUser() ?? { roles: [] } as never)
+    setAdmin(a)
+    if (!a) { redirectUnauthorized(router); return }
     setLoading(true)
     getSuppliers().then(setSuppliers).catch(() => {}).finally(() => setLoading(false))
   }, [])

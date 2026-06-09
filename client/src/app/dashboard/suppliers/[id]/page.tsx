@@ -13,7 +13,7 @@ import type { Supplier } from '@/types/catalog'
 export default function SupplierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const admin = isAdmin(getAuthUser() ?? { roles: [] } as never)
+  const [admin, setAdmin] = useState(false)
   const [supplier, setSupplier] = useState<Supplier | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -26,6 +26,7 @@ export default function SupplierDetailPage({ params }: { params: Promise<{ id: s
     finally { setLoading(false) }
   }
 
+  useEffect(() => { setAdmin(isAdmin(getAuthUser() ?? { roles: [] } as never)) }, [])
   useEffect(() => { load() }, [id])
 
   if (notFound) return (

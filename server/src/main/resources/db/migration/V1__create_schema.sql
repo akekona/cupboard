@@ -5,16 +5,16 @@ CREATE TABLE roles (
 );
 
 CREATE TABLE users (
-    id            BIGSERIAL    PRIMARY KEY,
-    email         VARCHAR(255) NOT NULL UNIQUE,
-    first_name    VARCHAR(100) NOT NULL,
-    last_name     VARCHAR(100) NOT NULL,
-    password_hash VARCHAR,
-    avatar_url    VARCHAR,
-    is_active     BOOLEAN      NOT NULL DEFAULT true,
-    created_at    TIMESTAMP    NOT NULL DEFAULT now(),
-    updated_at    TIMESTAMP    NOT NULL DEFAULT now(),
-    deleted_at    TIMESTAMP
+    id             BIGSERIAL    PRIMARY KEY,
+    email          VARCHAR(255) NOT NULL UNIQUE,
+    first_name     VARCHAR(100) NOT NULL,
+    last_name      VARCHAR(100) NOT NULL,
+    password_hash  VARCHAR,
+    avatar_url     VARCHAR,
+    account_status VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE',
+    created_at     TIMESTAMP    NOT NULL DEFAULT now(),
+    updated_at     TIMESTAMP    NOT NULL DEFAULT now(),
+    deleted_at     TIMESTAMP
 );
 
 CREATE TABLE user_auth_providers (
@@ -40,7 +40,6 @@ CREATE TABLE suppliers (
     contact_phone VARCHAR(50),
     address       TEXT,
     notes         TEXT,
-    is_active     BOOLEAN      NOT NULL DEFAULT true,
     created_at    TIMESTAMP    NOT NULL DEFAULT now(),
     updated_at    TIMESTAMP    NOT NULL DEFAULT now(),
     deleted_at    TIMESTAMP
@@ -57,7 +56,6 @@ CREATE TABLE products (
     unit              VARCHAR(50)  NOT NULL,
     stock_quantity    INT          NOT NULL DEFAULT 0,
     reorder_threshold INT          NOT NULL DEFAULT 0,
-    is_active         BOOLEAN      NOT NULL DEFAULT true,
     created_at        TIMESTAMP    NOT NULL DEFAULT now(),
     updated_at        TIMESTAMP    NOT NULL DEFAULT now(),
     deleted_at        TIMESTAMP

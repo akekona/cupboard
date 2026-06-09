@@ -24,7 +24,7 @@ const STATUS_COLORS: Record<AccountStatus, string> = {
 export default function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const admin = isAdmin(getAuthUser() ?? { roles: [] } as never)
+  const [admin, setAdmin] = useState(false)
   const [client, setClient] = useState<ClientDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -39,6 +39,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
     finally { setLoading(false) }
   }
 
+  useEffect(() => { setAdmin(isAdmin(getAuthUser() ?? { roles: [] } as never)) }, [])
   useEffect(() => { load() }, [id])
 
   async function handleSuspendConfirm() {

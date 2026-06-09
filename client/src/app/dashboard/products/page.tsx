@@ -46,7 +46,9 @@ export default function ProductsPage() {
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [version, setVersion] = useState(0)
-  const admin = isAdmin(getAuthUser() ?? { roles: [] } as never)
+  const [admin, setAdmin] = useState(false)
+
+  useEffect(() => { setAdmin(isAdmin(getAuthUser() ?? { roles: [] } as never)) }, [])
   const skipFirstSync = useRef(true)
 
   // Fetch whenever filter state or page changes
