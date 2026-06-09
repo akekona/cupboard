@@ -1,6 +1,7 @@
 package com.cupboard.api.controller;
 
 import com.cupboard.api.dto.ApiResponse;
+import com.cupboard.api.dto.PagedResponse;
 import com.cupboard.api.dto.product.CreateProductRequest;
 import com.cupboard.api.dto.product.ProductResponse;
 import com.cupboard.api.dto.product.UpdateProductRequest;
@@ -21,8 +22,15 @@ public class ProductController {
     private ProductService productService;
 
     @GetMapping
-    public ApiResponse<List<ProductResponse>> getAll() {
-        return ApiResponse.ok(productService.getAllProducts());
+    public ApiResponse<PagedResponse<ProductResponse>> getAll(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) List<String> category,
+            @RequestParam(required = false) List<String> status,
+            @RequestParam(required = false) List<String> skus,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        return ApiResponse.ok(productService.getProductsPaginated(search, category, status, skus, page, size));
     }
 
     @GetMapping("/low-stock")

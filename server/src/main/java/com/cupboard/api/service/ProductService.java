@@ -1,11 +1,15 @@
 package com.cupboard.api.service;
 
+import com.cupboard.api.dto.PagedResponse;
 import com.cupboard.api.dto.product.*;
 import com.cupboard.api.entity.Product;
 import com.cupboard.api.enums.Currency;
 import com.cupboard.api.exception.EntityNotFoundException;
 import com.cupboard.api.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +27,51 @@ public class ProductService {
         return productRepository.findAllByDeletedAtIsNull().stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponse<ProductResponse> getProductsPaginated(
+            String search,
+            List<String> categories,
+            List<String> statuses,
+            List<String> skus,
+            int page,
+            int size
+    ) {
+        if (skus != null && !skus.isEmpty()) {
+            List<String> lowercaseSkus = skus.stream().map(String::toLowerCase).toList();
+            List<ProductResponse> results = productRepository.findBySkus(lowercaseSkus)
+                    .stream().map(this::toResponse).toList();
+            return new PagedResponse<>(results, 0, 1, results.size(), results.size(), true, true);
+        }
+
+        String searchLike = (search == null || search.isBlank()) ? null : "%" + search.toLowerCase() + "%";
+        boolean filterCategories = categories != null && !categories.isEmpty();
+        boolean filterStatuses = statuses != null && !statuses.isEmpty();
+        boolean inStock = filterStatuses && statuses.contains("IN_STOCK");
+        boolean lowStock = filterStatuses && statuses.contains("LOW_STOCK");
+        boolean outOfStock = filterStatuses && statuses.contains("OUT_OF_STOCK");
+        // Hibernate requires a non-empty list for IN clauses; placeholder is never reached when filterCategories=false
+        List<String> cats = filterCategories ? categories : List.of("__NONE__");
+
+        Page<Product> productPage = productRepository.findAllFiltered(
+                searchLike, filterCategories, cats, filterStatuses, inStock, lowStock, outOfStock,
+                PageRequest.of(page, size, Sort.by("name").ascending())
+        );
+
+        List<ProductResponse> content = productPage.getContent().stream()
+                .map(this::toResponse)
+                .toList();
+
+        return new PagedResponse<>(
+                content,
+                productPage.getNumber(),
+                productPage.getTotalPages(),
+                productPage.getTotalElements(),
+                productPage.getSize(),
+                productPage.isFirst(),
+                productPage.isLast()
+        );
     }
 
     @Transactional(readOnly = true)
