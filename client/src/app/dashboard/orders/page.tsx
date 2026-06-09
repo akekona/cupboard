@@ -2,36 +2,74 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { Plus, Search, X } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { getOrders } from '@/lib/api/orders'
+import { getUsers } from '@/lib/api/users'
+import { getAuthUser, isAdmin } from '@/lib/auth'
 import { Pagination } from '@/components/common/Pagination'
 import { PageHeader } from '@/components/common/PageHeader'
+import { OrderStatusTabs } from '@/components/pages/orders/OrderStatusTabs'
+import { OrderSearchRow } from '@/components/pages/orders/OrderSearchRow'
 import { OrdersTable } from '@/components/pages/orders/OrdersTable'
-import type { OrderStatus, OrderSummary } from '@/types/orders'
+import type { OrderStatus, OrderSortBy, SortDir, OrderSummary } from '@/types/orders'
+import type { User } from '@/types/users'
 import type { PagedResponse } from '@/types/common'
 
-const STATUSES: OrderStatus[] = ['DRAFT', 'CONFIRMED', 'SHIPPED', 'FULFILLED']
 const PAGE_SIZE = 50
+
+const EMPTY_MESSAGES: Record<OrderStatus | 'ALL', string> = {
+  ALL: 'No orders found.',
+  DRAFT: 'No draft orders.',
+  CONFIRMED: 'No confirmed orders.',
+  SHIPPED: 'No shipped orders.',
+  FULFILLED: 'No fulfilled orders.',
+}
 
 export default function OrdersPage() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-
-  const [currentPage, setCurrentPage] = useState(() => Number(searchParams.get('page') ?? 0))
-  const [pagedData, setPagedData] = useState<PagedResponse<OrderSummary> | null>(null)
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>(() => (searchParams.get('status') ?? '') as OrderStatus | '')
-  const [searchValue, setSearchValue] = useState(() => searchParams.get('search') ?? '')
-  const [activeSearch, setActiveSearch] = useState(() => searchParams.get('search') ?? '')
-  const [isLoading, setIsLoading] = useState(true)
+  const admin = isAdmin(getAuthUser() ?? { roles: [] } as never)
   const skipFirstSync = useRef(true)
 
+  const [activeTab, setActiveTab] = useState<OrderStatus | 'ALL'>(
+    () => (searchParams.get('tab') ?? 'ALL') as OrderStatus | 'ALL'
+  )
+  const [clientSearchInput, setClientSearchInput] = useState(() => searchParams.get('clientSearch') ?? '')
+  const [activeClientSearch, setActiveClientSearch] = useState(() => searchParams.get('clientSearch') ?? '')
+  const [orderNumberInput, setOrderNumberInput] = useState(() => searchParams.get('orderNumber') ?? '')
+  const [activeOrderNumber, setActiveOrderNumber] = useState(() => searchParams.get('orderNumber') ?? '')
+  const [createdByFilter, setCreatedByFilter] = useState<number | null>(() => {
+    const v = searchParams.get('createdBy'); return v ? Number(v) : null
+  })
+  const [sortBy, setSortBy] = useState<OrderSortBy>(
+    () => (searchParams.get('sortBy') as OrderSortBy) ?? 'createdAt'
+  )
+  const [sortDir, setSortDir] = useState<SortDir>(
+    () => (searchParams.get('sortDir') as SortDir) ?? 'desc'
+  )
+  const [currentPage, setCurrentPage] = useState(() => Number(searchParams.get('page') ?? 0))
+  const [pagedData, setPagedData] = useState<PagedResponse<OrderSummary> | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [users, setUsers] = useState<User[]>([])
+
+  // Fetch users once on mount (admin only)
+  useEffect(() => {
+    if (!admin) return
+    getUsers().then(setUsers).catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch orders whenever any filter/sort/page changes
   useEffect(() => {
     let cancelled = false
     setIsLoading(true)
     getOrders({
-      status: statusFilter || undefined,
-      clientSearch: activeSearch || undefined,
+      status: activeTab !== 'ALL' ? activeTab : undefined,
+      clientSearch: activeClientSearch || undefined,
+      orderNumber: activeOrderNumber || undefined,
+      createdById: createdByFilter ?? undefined,
+      sortBy,
+      sortDir,
       page: currentPage,
       size: PAGE_SIZE,
     })
@@ -39,32 +77,66 @@ export default function OrdersPage() {
       .catch(() => {})
       .finally(() => { if (!cancelled) setIsLoading(false) })
     return () => { cancelled = true }
-  }, [currentPage, statusFilter, activeSearch])
+  }, [activeTab, activeClientSearch, activeOrderNumber, createdByFilter, sortBy, sortDir, currentPage])
 
+  // Sync filter state to URL
   useEffect(() => {
     if (skipFirstSync.current) { skipFirstSync.current = false; return }
     const params = new URLSearchParams()
-    if (statusFilter) params.set('status', statusFilter)
-    if (activeSearch) params.set('search', activeSearch)
+    if (activeTab !== 'ALL') params.set('tab', activeTab)
+    if (activeClientSearch) params.set('clientSearch', activeClientSearch)
+    if (activeOrderNumber) params.set('orderNumber', activeOrderNumber)
+    if (createdByFilter) params.set('createdBy', String(createdByFilter))
+    if (sortBy !== 'createdAt') params.set('sortBy', sortBy)
+    if (sortDir !== 'desc') params.set('sortDir', sortDir)
     if (currentPage > 0) params.set('page', String(currentPage))
     const qs = params.toString()
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
-  }, [statusFilter, activeSearch, currentPage])
+  }, [activeTab, activeClientSearch, activeOrderNumber, createdByFilter, sortBy, sortDir, currentPage])
 
-  function handleSearch() {
-    setActiveSearch(searchValue)
+  function handleTabChange(tab: OrderStatus | 'ALL') {
+    setActiveTab(tab)
     setCurrentPage(0)
   }
 
-  function handleClearSearch() {
-    setSearchValue('')
-    setActiveSearch('')
+  function handleClientSearch() {
+    setActiveClientSearch(clientSearchInput)
     setCurrentPage(0)
   }
 
-  function handleStatusChange(status: OrderStatus | '') {
-    setStatusFilter(status)
+  function handleOrderNumberSearch() {
+    setActiveOrderNumber(orderNumberInput)
     setCurrentPage(0)
+  }
+
+  function handleClearClientSearch() {
+    setClientSearchInput('')
+    setActiveClientSearch('')
+    setCurrentPage(0)
+  }
+
+  function handleClearOrderNumber() {
+    setOrderNumberInput('')
+    setActiveOrderNumber('')
+    setCurrentPage(0)
+  }
+
+  function handleCreatedByChange(userId: number | null) {
+    setCreatedByFilter(userId)
+    setCurrentPage(0)
+  }
+
+  function handleSortChange(field: OrderSortBy, dir: SortDir) {
+    setSortBy(field)
+    setSortDir(dir)
+    setCurrentPage(0)
+  }
+
+  function handleTableSort(field: OrderSortBy) {
+    const newDir = sortBy === field
+      ? (sortDir === 'asc' ? 'desc' : 'asc')
+      : (field === 'needBy' ? 'asc' : 'desc')
+    handleSortChange(field, newDir)
   }
 
   return (
@@ -80,41 +152,38 @@ export default function OrdersPage() {
         }
       />
 
-      <div className="flex items-center gap-2 mb-5 flex-wrap">
-        <div className="relative flex-1 min-w-48">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <input
-            value={searchValue}
-            onChange={e => setSearchValue(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            placeholder="Search by cafe name..."
-            className="w-full pl-8 pr-8 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-[#3B6D11]/40 focus:border-[#3B6D11]"
-          />
-          {searchValue && (
-            <button onClick={handleClearSearch}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-muted text-muted-foreground hover:bg-muted-foreground/20 flex items-center justify-center">
-              <X size={10} />
-            </button>
-          )}
-        </div>
-        <button onClick={handleSearch}
-          className="px-4 py-2 text-sm font-medium text-white bg-[#3B6D11] rounded-md hover:bg-[#2f5a0e] transition-colors whitespace-nowrap">
-          Search
-        </button>
-        <select
-          value={statusFilter}
-          onChange={e => handleStatusChange(e.target.value as OrderStatus | '')}
-          className="px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-[#3B6D11]/40 focus:border-[#3B6D11]"
-        >
-          <option value="">All statuses</option>
-          {STATUSES.map(s => <option key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>)}
-        </select>
-      </div>
+      <OrderStatusTabs
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        totalElements={pagedData?.totalElements ?? 0}
+      />
+
+      <OrderSearchRow
+        orderNumberInput={orderNumberInput}
+        clientSearchInput={clientSearchInput}
+        createdByFilter={createdByFilter}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        users={users}
+        isAdmin={admin}
+        onOrderNumberChange={setOrderNumberInput}
+        onClientSearchChange={setClientSearchInput}
+        onOrderNumberSearch={handleOrderNumberSearch}
+        onClientSearch={handleClientSearch}
+        onClearOrderNumber={handleClearOrderNumber}
+        onClearClientSearch={handleClearClientSearch}
+        onCreatedByChange={handleCreatedByChange}
+        onSortChange={handleSortChange}
+      />
 
       <OrdersTable
         orders={pagedData?.content ?? []}
         loading={isLoading}
         onRowClick={id => router.push(`/dashboard/orders/${id}`)}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        onSort={handleTableSort}
+        emptyMessage={EMPTY_MESSAGES[activeTab]}
       />
 
       {pagedData && pagedData.totalPages > 1 && (

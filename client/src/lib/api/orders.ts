@@ -2,6 +2,9 @@ import { api } from '@/lib/api'
 import type {
   Order,
   OrderSummary,
+  OrderStatus,
+  OrderSortBy,
+  SortDir,
   CreateOrderRequest,
   UpdateOrderRequest,
 } from '@/types/orders'
@@ -21,12 +24,12 @@ async function unwrap<T>(promise: Promise<ApiResponse<T>>): Promise<T> {
 
 export function getOrders(params?: {
   clientId?: number
-  status?: string
+  status?: OrderStatus
   createdById?: number
   clientSearch?: string
   orderNumber?: string
-  sortBy?: 'createdAt' | 'needBy'
-  sortDir?: 'asc' | 'desc'
+  sortBy?: OrderSortBy
+  sortDir?: SortDir
   page?: number
   size?: number
 }): Promise<PagedResponse<OrderSummary>> {
