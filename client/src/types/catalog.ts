@@ -42,6 +42,7 @@ export interface Supplier {
 }
 
 export interface SupplierProductInfo {
+  id: number
   productId: number
   productName: string
   sku: string
