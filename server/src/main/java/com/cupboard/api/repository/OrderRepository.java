@@ -2,13 +2,13 @@ package com.cupboard.api.repository;
 
 import com.cupboard.api.entity.Order;
 import com.cupboard.api.enums.OrderStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
-
-import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,21 +22,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findAllByStatus(OrderStatus status);
 
-    @Query("""
-            SELECT DISTINCT o FROM Order o
-            JOIN FETCH o.client
-            JOIN FETCH o.createdBy
-            LEFT JOIN FETCH o.orderItems oi
-            LEFT JOIN FETCH oi.product
-            WHERE (:clientId IS NULL OR o.client.id = :clientId)
-            AND (:status IS NULL OR o.status = :status)
-            AND (:createdById IS NULL OR o.createdBy.id = :createdById)
-            ORDER BY o.createdAt DESC
-            """)
-    List<Order> findAllWithFilters(
+    @Query("SELECT o FROM Order o WHERE " +
+            "(:clientId IS NULL OR o.client.id = :clientId) AND " +
+            "(:status IS NULL OR o.status = :status) AND " +
+            "(:createdById IS NULL OR o.createdBy.id = :createdById) AND " +
+            "(:searchLike IS NULL OR LOWER(o.client.name) LIKE :searchLike) " +
+            "ORDER BY o.createdAt DESC")
+    Page<Order> findAllWithFilters(
             @Param("clientId") Long clientId,
             @Param("status") OrderStatus status,
-            @Param("createdById") Long createdById
+            @Param("createdById") Long createdById,
+            @Param("searchLike") String searchLike,
+            Pageable pageable
     );
 
     @Query("""

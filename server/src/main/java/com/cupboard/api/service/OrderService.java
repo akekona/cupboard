@@ -1,5 +1,6 @@
 package com.cupboard.api.service;
 
+import com.cupboard.api.dto.PagedResponse;
 import com.cupboard.api.dto.order.*;
 import com.cupboard.api.entity.*;
 import com.cupboard.api.enums.InvoiceStatus;
@@ -8,6 +9,8 @@ import com.cupboard.api.exception.EntityNotFoundException;
 import com.cupboard.api.exception.ValidationException;
 import com.cupboard.api.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,11 +32,16 @@ public class OrderService {
     // ── Queries ───────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<OrderSummaryResponse> getAllOrders(Long clientId, OrderStatus status, Long createdById) {
-        return orderRepository.findAllWithFilters(clientId, status, createdById)
-                .stream()
-                .map(this::toSummaryResponse)
-                .toList();
+    public PagedResponse<OrderSummaryResponse> getOrdersPaginated(
+            Long clientId, OrderStatus status, Long createdById, String search, int page, int size) {
+        String searchLike = (search == null || search.isBlank()) ? null : "%" + search.toLowerCase() + "%";
+        Page<Order> orderPage = orderRepository.findAllWithFilters(
+                clientId, status, createdById, searchLike, PageRequest.of(page, size));
+        List<OrderSummaryResponse> content = orderPage.getContent().stream()
+                .map(this::toSummaryResponse).toList();
+        return new PagedResponse<>(content, orderPage.getNumber(), orderPage.getTotalPages(),
+                orderPage.getTotalElements(), orderPage.getSize(),
+                orderPage.isFirst(), orderPage.isLast());
     }
 
     @Transactional(readOnly = true)

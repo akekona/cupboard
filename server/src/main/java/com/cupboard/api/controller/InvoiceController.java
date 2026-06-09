@@ -1,6 +1,11 @@
 package com.cupboard.api.controller;
 
+// Frontend pagination component expects:
+// content, currentPage, totalPages, totalElements, pageSize, first, last
+// from PagedResponse<T>
+// Use the same Pagination component as products page
 import com.cupboard.api.dto.ApiResponse;
+import com.cupboard.api.dto.PagedResponse;
 import com.cupboard.api.dto.invoice.*;
 import com.cupboard.api.enums.InvoiceStatus;
 import com.cupboard.api.service.InvoiceService;
@@ -17,10 +22,13 @@ public class InvoiceController {
     @Autowired private InvoiceService invoiceService;
 
     @GetMapping
-    public ApiResponse<List<InvoiceSummaryResponse>> getAll(
+    public ApiResponse<PagedResponse<InvoiceSummaryResponse>> getAll(
             @RequestParam(required = false) Long clientId,
-            @RequestParam(required = false) InvoiceStatus status) {
-        return ApiResponse.ok(invoiceService.getAllInvoices(clientId, status));
+            @RequestParam(required = false) InvoiceStatus status,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return ApiResponse.ok(invoiceService.getInvoicesPaginated(clientId, status, search, page, size));
     }
 
     @GetMapping("/stats")

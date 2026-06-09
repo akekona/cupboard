@@ -91,18 +91,19 @@ class OrderControllerTest {
                 .andExpect(jsonPath("$.data.status").value("DRAFT"));
     }
 
-    // ── Get all ───────────────────────────────────────────────────────────────
+    // ── Get all (paginated) ───────────────────────────────────────────────────
 
     @Test
-    void getAllOrders_noFilters_returnsAllOrders() throws Exception {
+    void getAllOrders_noFilters_returnsPagedResponse() throws Exception {
         String body = mockMvc.perform(get("/api/orders")
                         .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.content").isArray())
+                .andExpect(jsonPath("$.data.totalElements").isNumber())
                 .andReturn().getResponse().getContentAsString();
 
-        // Seed data has 5 orders
-        assertThat(om.readTree(body).get("data").size()).isGreaterThanOrEqualTo(5);
+        assertThat(om.readTree(body).get("data").get("totalElements").asLong()).isGreaterThanOrEqualTo(5);
     }
 
     @Test
@@ -111,21 +112,66 @@ class OrderControllerTest {
                         .header("Authorization", "Bearer " + adminToken()))
                 .andReturn().getResponse().getContentAsString();
 
-        JsonNode data = om.readTree(body).get("data");
-        for (JsonNode o : data) {
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(1);
+        for (JsonNode o : content) {
             assertThat(o.get("status").asText()).isEqualTo("FULFILLED");
         }
     }
 
     @Test
-    void getAllOrders_filterByClient_returnsClientOrders() throws Exception {
+    void getAllOrders_filterByClientId_returnsOnlyThatClientsOrders() throws Exception {
         String body = mockMvc.perform(get("/api/orders?clientId=1")
                         .header("Authorization", "Bearer " + adminToken()))
                 .andReturn().getResponse().getContentAsString();
 
-        JsonNode data = om.readTree(body).get("data");
-        for (JsonNode o : data) {
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(1);
+        for (JsonNode o : content) {
             assertThat(o.get("clientId").asLong()).isEqualTo(1L);
+        }
+    }
+
+    @Test
+    void getAllOrders_searchByClientName_returnsMatchingOrders() throws Exception {
+        // "Blue Bottle Kailua" is client 1 — has 2 seed orders
+        String body = mockMvc.perform(get("/api/orders?search=blue")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(2);
+        for (JsonNode o : content) {
+            assertThat(o.get("clientName").asText().toLowerCase()).contains("blue");
+        }
+    }
+
+    @Test
+    void getAllOrders_pagination_page0Size2_returnsCorrectMetadata() throws Exception {
+        String body = mockMvc.perform(get("/api/orders?page=0&size=2")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode data = om.readTree(body).get("data");
+        assertThat(data.get("content").size()).isEqualTo(2);
+        assertThat(data.get("currentPage").asInt()).isEqualTo(0);
+        assertThat(data.get("totalPages").asInt()).isGreaterThanOrEqualTo(3);
+        assertThat(data.get("first").asBoolean()).isTrue();
+        assertThat(data.get("last").asBoolean()).isFalse();
+    }
+
+    @Test
+    void getAllOrders_combinedFilters_returnsIntersection() throws Exception {
+        // client 1 + FULFILLED → order 1 only
+        String body = mockMvc.perform(get("/api/orders?clientId=1&status=FULFILLED")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(1);
+        for (JsonNode o : content) {
+            assertThat(o.get("clientId").asLong()).isEqualTo(1L);
+            assertThat(o.get("status").asText()).isEqualTo("FULFILLED");
         }
     }
 

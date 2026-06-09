@@ -7,6 +7,7 @@ import com.cupboard.api.enums.PaymentMethod;
 import com.cupboard.api.enums.PaymentStatus;
 import com.cupboard.api.repository.InvoiceRepository;
 import com.cupboard.api.repository.PaymentRepository;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,17 +37,19 @@ class InvoiceControllerTest {
 
     private final ObjectMapper om = new ObjectMapper().findAndRegisterModules();
 
-    // ── List ──────────────────────────────────────────────────────────────────
+    // ── List (paginated) ──────────────────────────────────────────────────────
 
     @Test
-    void getAllInvoices_noFilters_returnsAll() throws Exception {
+    void getAllInvoices_noFilters_returnsPagedResponse() throws Exception {
         String body = mockMvc.perform(get("/api/invoices")
                         .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.content").isArray())
+                .andExpect(jsonPath("$.data.totalElements").isNumber())
                 .andReturn().getResponse().getContentAsString();
 
-        assertThat(om.readTree(body).get("data").size()).isGreaterThanOrEqualTo(4);
+        assertThat(om.readTree(body).get("data").get("totalElements").asLong()).isGreaterThanOrEqualTo(4);
     }
 
     @Test
@@ -55,8 +58,9 @@ class InvoiceControllerTest {
                         .header("Authorization", "Bearer " + adminToken()))
                 .andReturn().getResponse().getContentAsString();
 
-        om.readTree(body).get("data").forEach(node ->
-                assertThat(node.get("status").asText()).isEqualTo("PAID"));
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(1);
+        content.forEach(node -> assertThat(node.get("status").asText()).isEqualTo("PAID"));
     }
 
     @Test
@@ -65,8 +69,57 @@ class InvoiceControllerTest {
                         .header("Authorization", "Bearer " + adminToken()))
                 .andReturn().getResponse().getContentAsString();
 
-        om.readTree(body).get("data").forEach(node ->
-                assertThat(node.get("clientId").asLong()).isEqualTo(1L));
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(1);
+        content.forEach(node -> assertThat(node.get("clientId").asLong()).isEqualTo(1L));
+    }
+
+    @Test
+    void getAllInvoices_searchByInvoiceNumber_returnsMatch() throws Exception {
+        String body = mockMvc.perform(get("/api/invoices?search=INV-0001")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isEqualTo(1);
+        assertThat(content.get(0).get("invoiceNumber").asText()).isEqualTo("INV-0001");
+    }
+
+    @Test
+    void getAllInvoices_searchByClientName_returnsMatchingInvoices() throws Exception {
+        // "Verve Coffee" is client 3 with 2 invoices (INV-0003, INV-0004)
+        String body = mockMvc.perform(get("/api/invoices?search=verve")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(2);
+        content.forEach(node -> assertThat(node.get("clientName").asText().toLowerCase()).contains("verve"));
+    }
+
+    @Test
+    void getAllInvoices_pagination_page0Size2_returnsCorrectMetadata() throws Exception {
+        String body = mockMvc.perform(get("/api/invoices?page=0&size=2")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode data = om.readTree(body).get("data");
+        assertThat(data.get("content").size()).isEqualTo(2);
+        assertThat(data.get("currentPage").asInt()).isEqualTo(0);
+        assertThat(data.get("totalPages").asInt()).isGreaterThanOrEqualTo(2);
+        assertThat(data.get("first").asBoolean()).isTrue();
+    }
+
+    @Test
+    void getAllInvoices_combinedFilters_returnsIntersection() throws Exception {
+        // client 1 + PAID → INV-0001 only
+        String body = mockMvc.perform(get("/api/invoices?clientId=1&status=PAID")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isEqualTo(1);
+        assertThat(content.get(0).get("invoiceNumber").asText()).isEqualTo("INV-0001");
     }
 
     // ── Get by id ─────────────────────────────────────────────────────────────
