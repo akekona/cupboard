@@ -3,13 +3,16 @@ package com.cupboard.api.service;
 import com.cupboard.api.dto.PagedResponse;
 import com.cupboard.api.dto.invoice.*;
 import com.cupboard.api.entity.Invoice;
+import com.cupboard.api.entity.OrderItem;
 import com.cupboard.api.entity.Payment;
 import com.cupboard.api.enums.InvoiceStatus;
 import com.cupboard.api.enums.PaymentMethod;
 import com.cupboard.api.enums.PaymentStatus;
 import com.cupboard.api.exception.EntityNotFoundException;
 import com.cupboard.api.exception.ValidationException;
+import com.cupboard.api.repository.ClientRepository;
 import com.cupboard.api.repository.InvoiceRepository;
+import com.cupboard.api.repository.OrderItemRepository;
 import com.cupboard.api.repository.PaymentRepository;
 import com.stripe.model.Customer;
 import com.stripe.model.InvoiceItem;
@@ -33,6 +36,8 @@ public class InvoiceService {
 
     @Autowired private InvoiceRepository invoiceRepository;
     @Autowired private PaymentRepository paymentRepository;
+    @Autowired private OrderItemRepository orderItemRepository;
+    @Autowired private ClientRepository clientRepository;
 
     // ── Queries ───────────────────────────────────────────────────────────────
 
@@ -104,11 +109,19 @@ public class InvoiceService {
         }
 
         try {
-            CustomerCreateParams customerParams = CustomerCreateParams.builder()
-                    .setEmail(invoice.getClient().getContactEmail())
-                    .setName(invoice.getClient().getName())
-                    .build();
-            Customer stripeCustomer = Customer.create(customerParams);
+            var client = invoice.getClient();
+            Customer stripeCustomer;
+            if (client.getStripeCustomerId() != null) {
+                stripeCustomer = Customer.retrieve(client.getStripeCustomerId());
+            } else {
+                CustomerCreateParams customerParams = CustomerCreateParams.builder()
+                        .setEmail(client.getContactEmail())
+                        .setName(client.getName())
+                        .build();
+                stripeCustomer = Customer.create(customerParams);
+                client.setStripeCustomerId(stripeCustomer.getId());
+                clientRepository.save(client);
+            }
 
             InvoiceCreateParams invoiceParams = InvoiceCreateParams.builder()
                     .setCustomer(stripeCustomer.getId())
@@ -119,14 +132,20 @@ public class InvoiceService {
                     .build();
             com.stripe.model.Invoice stripeInvoice = com.stripe.model.Invoice.create(invoiceParams);
 
-            InvoiceItemCreateParams itemParams = InvoiceItemCreateParams.builder()
-                    .setCustomer(stripeCustomer.getId())
-                    .setInvoice(stripeInvoice.getId())
-                    .setAmount(invoice.getTotalAmount())
-                    .setCurrency(invoice.getCurrency().name().toLowerCase())
-                    .setDescription("Order " + invoice.getOrder().getId() + " — " + invoice.getInvoiceNumber())
-                    .build();
-            InvoiceItem.create(itemParams);
+            List<OrderItem> orderItems = orderItemRepository.findAllByOrderId(invoice.getOrder().getId());
+            for (OrderItem item : orderItems) {
+                String description = String.format("%s × %d",
+                        item.getProduct().getName(), item.getQuantity());
+                long lineTotal = (long) item.getUnitPrice() * item.getQuantity();
+                InvoiceItemCreateParams itemParams = InvoiceItemCreateParams.builder()
+                        .setCustomer(stripeCustomer.getId())
+                        .setInvoice(stripeInvoice.getId())
+                        .setAmount(lineTotal)
+                        .setCurrency(invoice.getCurrency().name().toLowerCase())
+                        .setDescription(description)
+                        .build();
+                InvoiceItem.create(itemParams);
+            }
 
             stripeInvoice = stripeInvoice.finalizeInvoice();
             stripeInvoice = stripeInvoice.sendInvoice();
