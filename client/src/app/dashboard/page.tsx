@@ -23,7 +23,7 @@ export default function DashboardPage() {
       try {
         const [d, o] = await Promise.all([
           getDashboardData().catch(() => null),
-          getOrders().catch(() => []),
+          getOrders({ size: 50 }).then(r => r.content).catch(() => []),
         ])
         setDashData(d)
         setOrders(o)

@@ -1,31 +1,143 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Plus, Search } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { Plus } from 'lucide-react'
 import { getOrders } from '@/lib/api/orders'
+import { getUsers } from '@/lib/api/users'
+import { getAuthUser, isAdmin } from '@/lib/auth'
+import { Pagination } from '@/components/common/Pagination'
 import { PageHeader } from '@/components/common/PageHeader'
+import { OrderStatusTabs } from '@/components/pages/orders/OrderStatusTabs'
+import { OrderSearchRow } from '@/components/pages/orders/OrderSearchRow'
 import { OrdersTable } from '@/components/pages/orders/OrdersTable'
-import type { OrderStatus, OrderSummary } from '@/types/orders'
+import type { OrderStatus, OrderSortBy, SortDir, OrderSummary } from '@/types/orders'
+import type { User } from '@/types/users'
+import type { PagedResponse } from '@/types/common'
 
-const STATUSES: OrderStatus[] = ['DRAFT', 'CONFIRMED', 'SHIPPED', 'FULFILLED']
+const PAGE_SIZE = 50
+
+const EMPTY_MESSAGES: Record<OrderStatus | 'ALL', string> = {
+  ALL: 'No orders found.',
+  DRAFT: 'No draft orders.',
+  CONFIRMED: 'No confirmed orders.',
+  SHIPPED: 'No shipped orders.',
+  FULFILLED: 'No fulfilled orders.',
+}
 
 export default function OrdersPage() {
   const router = useRouter()
-  const [orders, setOrders] = useState<OrderSummary[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('')
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const admin = isAdmin(getAuthUser() ?? { roles: [] } as never)
+  const skipFirstSync = useRef(true)
 
+  const [activeTab, setActiveTab] = useState<OrderStatus | 'ALL'>(
+    () => (searchParams.get('tab') ?? 'ALL') as OrderStatus | 'ALL'
+  )
+  const [clientSearchInput, setClientSearchInput] = useState(() => searchParams.get('clientSearch') ?? '')
+  const [activeClientSearch, setActiveClientSearch] = useState(() => searchParams.get('clientSearch') ?? '')
+  const [orderNumberInput, setOrderNumberInput] = useState(() => searchParams.get('orderNumber') ?? '')
+  const [activeOrderNumber, setActiveOrderNumber] = useState(() => searchParams.get('orderNumber') ?? '')
+  const [createdByFilter, setCreatedByFilter] = useState<number | null>(() => {
+    const v = searchParams.get('createdBy'); return v ? Number(v) : null
+  })
+  const [sortBy, setSortBy] = useState<OrderSortBy>(
+    () => (searchParams.get('sortBy') as OrderSortBy) ?? 'createdAt'
+  )
+  const [sortDir, setSortDir] = useState<SortDir>(
+    () => (searchParams.get('sortDir') as SortDir) ?? 'desc'
+  )
+  const [currentPage, setCurrentPage] = useState(() => Number(searchParams.get('page') ?? 0))
+  const [pagedData, setPagedData] = useState<PagedResponse<OrderSummary> | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [users, setUsers] = useState<User[]>([])
+
+  // Fetch users once on mount (admin only)
   useEffect(() => {
-    setLoading(true)
-    getOrders(statusFilter ? { status: statusFilter } : undefined)
-      .then(setOrders).catch(() => {}).finally(() => setLoading(false))
-  }, [statusFilter])
+    if (!admin) return
+    getUsers().then(setUsers).catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const displayed = search
-    ? orders.filter(o => o.clientName.toLowerCase().includes(search.toLowerCase()))
-    : orders
+  // Fetch orders whenever any filter/sort/page changes
+  useEffect(() => {
+    let cancelled = false
+    setIsLoading(true)
+    getOrders({
+      status: activeTab !== 'ALL' ? activeTab : undefined,
+      clientSearch: activeClientSearch || undefined,
+      orderNumber: activeOrderNumber || undefined,
+      createdById: createdByFilter ?? undefined,
+      sortBy,
+      sortDir,
+      page: currentPage,
+      size: PAGE_SIZE,
+    })
+      .then(data => { if (!cancelled) setPagedData(data) })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setIsLoading(false) })
+    return () => { cancelled = true }
+  }, [activeTab, activeClientSearch, activeOrderNumber, createdByFilter, sortBy, sortDir, currentPage])
+
+  // Sync filter state to URL
+  useEffect(() => {
+    if (skipFirstSync.current) { skipFirstSync.current = false; return }
+    const params = new URLSearchParams()
+    if (activeTab !== 'ALL') params.set('tab', activeTab)
+    if (activeClientSearch) params.set('clientSearch', activeClientSearch)
+    if (activeOrderNumber) params.set('orderNumber', activeOrderNumber)
+    if (createdByFilter) params.set('createdBy', String(createdByFilter))
+    if (sortBy !== 'createdAt') params.set('sortBy', sortBy)
+    if (sortDir !== 'desc') params.set('sortDir', sortDir)
+    if (currentPage > 0) params.set('page', String(currentPage))
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [activeTab, activeClientSearch, activeOrderNumber, createdByFilter, sortBy, sortDir, currentPage])
+
+  function handleTabChange(tab: OrderStatus | 'ALL') {
+    setActiveTab(tab)
+    setCurrentPage(0)
+  }
+
+  function handleClientSearch() {
+    setActiveClientSearch(clientSearchInput)
+    setCurrentPage(0)
+  }
+
+  function handleOrderNumberSearch() {
+    setActiveOrderNumber(orderNumberInput)
+    setCurrentPage(0)
+  }
+
+  function handleClearClientSearch() {
+    setClientSearchInput('')
+    setActiveClientSearch('')
+    setCurrentPage(0)
+  }
+
+  function handleClearOrderNumber() {
+    setOrderNumberInput('')
+    setActiveOrderNumber('')
+    setCurrentPage(0)
+  }
+
+  function handleCreatedByChange(userId: number | null) {
+    setCreatedByFilter(userId)
+    setCurrentPage(0)
+  }
+
+  function handleSortChange(field: OrderSortBy, dir: SortDir) {
+    setSortBy(field)
+    setSortDir(dir)
+    setCurrentPage(0)
+  }
+
+  function handleTableSort(field: OrderSortBy) {
+    const newDir = sortBy === field
+      ? (sortDir === 'asc' ? 'desc' : 'asc')
+      : (field === 'needBy' ? 'asc' : 'desc')
+    handleSortChange(field, newDir)
+  }
 
   return (
     <div className="page-container">
@@ -40,24 +152,50 @@ export default function OrdersPage() {
         }
       />
 
-      <div className="flex items-center gap-3 mb-5 flex-wrap">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by client…"
-            className="pl-8 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B6D11]/40 focus:border-[#3B6D11] w-52" />
-        </div>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as OrderStatus | '')}
-          className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B6D11]/40 focus:border-[#3B6D11]">
-          <option value="">All statuses</option>
-          {STATUSES.map(s => <option key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>)}
-        </select>
-      </div>
+      <OrderStatusTabs
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        totalElements={pagedData?.totalElements ?? 0}
+      />
+
+      <OrderSearchRow
+        orderNumberInput={orderNumberInput}
+        clientSearchInput={clientSearchInput}
+        createdByFilter={createdByFilter}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        users={users}
+        isAdmin={admin}
+        onOrderNumberChange={setOrderNumberInput}
+        onClientSearchChange={setClientSearchInput}
+        onOrderNumberSearch={handleOrderNumberSearch}
+        onClientSearch={handleClientSearch}
+        onClearOrderNumber={handleClearOrderNumber}
+        onClearClientSearch={handleClearClientSearch}
+        onCreatedByChange={handleCreatedByChange}
+        onSortChange={handleSortChange}
+      />
 
       <OrdersTable
-        orders={displayed}
-        loading={loading}
+        orders={pagedData?.content ?? []}
+        loading={isLoading}
         onRowClick={id => router.push(`/dashboard/orders/${id}`)}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        onSort={handleTableSort}
+        emptyMessage={EMPTY_MESSAGES[activeTab]}
       />
+
+      {pagedData && pagedData.totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={pagedData.totalPages}
+          totalElements={pagedData.totalElements}
+          pageSize={pagedData.pageSize}
+          onPageChange={setCurrentPage}
+          isLoading={isLoading}
+        />
+      )}
     </div>
   )
 }

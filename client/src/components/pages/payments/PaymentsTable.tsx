@@ -26,7 +26,7 @@ export function PaymentsTable({ payments, loading, onInvoiceClick }: Props) {
           <tbody className="divide-y divide-gray-50">
             {loading && <LoadingSkeleton rows={5} cols={7} />}
             {!loading && payments.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-14 text-center text-sm text-gray-400">No payments yet.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-14 text-center text-sm text-gray-400">No payments found.</td></tr>
             )}
             {!loading && payments.map(p => (
               <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">

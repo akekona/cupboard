@@ -1,5 +1,5 @@
 import { getAuthCookie } from '@/lib/auth'
-import type { Invoice, InvoiceSummary, InvoiceStats, Payment, PaymentStats } from '@/types/invoices'
+import type { Invoice, InvoiceSummary, InvoiceStats, Payment, PaymentStats, PaymentStatus, PaymentMethod } from '@/types/invoices'
 
 const BASE = 'http://localhost:8080'
 
@@ -30,12 +30,23 @@ async function req<T>(path: string, method = 'GET', body?: unknown): Promise<T> 
   return json?.data
 }
 
-export function getInvoices(filters?: { clientId?: number; status?: string }): Promise<InvoiceSummary[]> {
-  const params = new URLSearchParams()
-  if (filters?.clientId) params.set('clientId', String(filters.clientId))
-  if (filters?.status) params.set('status', filters.status)
-  const qs = params.toString()
-  return req(`/api/invoices${qs ? `?${qs}` : ''}`)
+import type { PagedResponse } from '@/types/common'
+
+export function getInvoices(params?: {
+  clientId?: number
+  status?: string
+  search?: string
+  page?: number
+  size?: number
+}): Promise<PagedResponse<InvoiceSummary>> {
+  const query = new URLSearchParams()
+  if (params?.clientId) query.set('clientId', String(params.clientId))
+  if (params?.status) query.set('status', params.status)
+  if (params?.search) query.set('search', params.search)
+  query.set('page', String(params?.page ?? 0))
+  query.set('size', String(params?.size ?? 50))
+  const qs = query.toString()
+  return req<PagedResponse<InvoiceSummary>>(`/api/invoices${qs ? `?${qs}` : ''}`)
 }
 
 export const getInvoiceById   = (id: number) => req<Invoice>(`/api/invoices/${id}`)
@@ -50,5 +61,20 @@ export const markOverdue     = (id: number) => req<Invoice>(`/api/invoices/${id}
 export const markPaid        = (id: number) => req<Invoice>(`/api/invoices/${id}/mark-paid`, 'PATCH')
 export const refundInvoice   = (id: number) => req<Invoice>(`/api/invoices/${id}/refund`, 'PATCH')
 
-export const getPayments     = ()            => req<Payment[]>('/api/payments')
+export function getPayments(params?: {
+  status?: PaymentStatus
+  paymentMethod?: PaymentMethod
+  search?: string
+  page?: number
+  size?: number
+}): Promise<PagedResponse<Payment>> {
+  const query = new URLSearchParams()
+  if (params?.status) query.set('status', params.status)
+  if (params?.paymentMethod) query.set('paymentMethod', params.paymentMethod)
+  if (params?.search) query.set('search', params.search)
+  query.set('page', String(params?.page ?? 0))
+  query.set('size', String(params?.size ?? 50))
+  const qs = query.toString()
+  return req<PagedResponse<Payment>>(`/api/payments${qs ? `?${qs}` : ''}`)
+}
 export const getPaymentStats = ()            => req<PaymentStats>('/api/payments/stats')

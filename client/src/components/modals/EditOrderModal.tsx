@@ -35,8 +35,8 @@ export function EditOrderModal({ order, onClose, onSuccess }: Props) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    getProducts().then(ps => {
-      setProducts(ps)
+    getProducts({ size: 1000 }).then(r => {
+      setProducts(r.content)
       const map = new Map<number, number>()
       for (const item of order.items) {
         map.set(item.productId, item.quantity)

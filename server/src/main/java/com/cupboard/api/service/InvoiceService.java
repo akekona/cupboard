@@ -1,5 +1,6 @@
 package com.cupboard.api.service;
 
+import com.cupboard.api.dto.PagedResponse;
 import com.cupboard.api.dto.invoice.*;
 import com.cupboard.api.entity.Invoice;
 import com.cupboard.api.entity.Payment;
@@ -18,6 +19,8 @@ import com.stripe.param.InvoiceItemCreateParams;
 import com.stripe.param.RefundCreateParams;
 import com.stripe.model.Refund;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,11 +36,16 @@ public class InvoiceService {
     // ── Queries ───────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<InvoiceSummaryResponse> getAllInvoices(Long clientId, InvoiceStatus status) {
-        return invoiceRepository.findAllWithFilters(clientId, status)
-                .stream()
-                .map(this::toSummaryResponse)
-                .toList();
+    public PagedResponse<InvoiceSummaryResponse> getInvoicesPaginated(
+            Long clientId, InvoiceStatus status, String search, int page, int size) {
+        String searchLike = (search == null || search.isBlank()) ? null : "%" + search.toLowerCase() + "%";
+        Page<Invoice> invoicePage = invoiceRepository.findAllWithFilters(
+                clientId, status, searchLike, PageRequest.of(page, size));
+        List<InvoiceSummaryResponse> content = invoicePage.getContent().stream()
+                .map(this::toSummaryResponse).toList();
+        return new PagedResponse<>(content, invoicePage.getNumber(), invoicePage.getTotalPages(),
+                invoicePage.getTotalElements(), invoicePage.getSize(),
+                invoicePage.isFirst(), invoicePage.isLast());
     }
 
     @Transactional(readOnly = true)

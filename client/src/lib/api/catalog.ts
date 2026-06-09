@@ -5,6 +5,7 @@ import type {
   ClientSummary,
   ClientDetail,
 } from '@/types/catalog'
+import type { PagedResponse } from '@/types/common'
 
 interface ApiResponse<T> {
   success: boolean
@@ -20,8 +21,23 @@ async function unwrap<T>(promise: Promise<ApiResponse<T>>): Promise<T> {
 
 // ── Products ──────────────────────────────────────────────────────────────────
 
-export const getProducts = () =>
-  unwrap(api.get<ApiResponse<Product[]>>('/api/products'))
+export function getProducts(params?: {
+  search?: string
+  category?: string[]
+  status?: string[]
+  skus?: string[]
+  page?: number
+  size?: number
+}): Promise<PagedResponse<Product>> {
+  const query = new URLSearchParams()
+  if (params?.search) query.set('search', params.search)
+  if (params?.category?.length) query.set('category', params.category.join(','))
+  if (params?.status?.length) query.set('status', params.status.join(','))
+  if (params?.skus?.length) query.set('skus', params.skus.join(','))
+  query.set('page', String(params?.page ?? 0))
+  query.set('size', String(params?.size ?? 50))
+  return unwrap(api.get<ApiResponse<PagedResponse<Product>>>(`/api/products?${query}`))
+}
 
 export const getLowStockProducts = () =>
   unwrap(api.get<ApiResponse<Product[]>>('/api/products/low-stock'))

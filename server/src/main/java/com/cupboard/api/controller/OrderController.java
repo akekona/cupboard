@@ -1,6 +1,11 @@
 package com.cupboard.api.controller;
 
+// Frontend pagination component expects:
+// content, currentPage, totalPages, totalElements, pageSize, first, last
+// from PagedResponse<T>
+// Use the same Pagination component as products page
 import com.cupboard.api.dto.ApiResponse;
+import com.cupboard.api.dto.PagedResponse;
 import com.cupboard.api.dto.order.*;
 import com.cupboard.api.enums.OrderStatus;
 import com.cupboard.api.repository.UserRepository;
@@ -22,11 +27,20 @@ public class OrderController {
     @Autowired private UserRepository userRepository;
 
     @GetMapping
-    public ApiResponse<List<OrderSummaryResponse>> getAll(
+    public ApiResponse<PagedResponse<OrderSummaryResponse>> getAll(
             @RequestParam(required = false) Long clientId,
             @RequestParam(required = false) OrderStatus status,
-            @RequestParam(required = false) Long createdById) {
-        return ApiResponse.ok(orderService.getAllOrders(clientId, status, createdById));
+            @RequestParam(required = false) Long createdById,
+            @RequestParam(required = false) String clientSearch,
+            @RequestParam(required = false) String orderNumber,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        if (!List.of("createdAt", "needBy").contains(sortBy)) sortBy = "createdAt";
+        if (!List.of("asc", "desc").contains(sortDir)) sortDir = "desc";
+        return ApiResponse.ok(orderService.getOrdersPaginated(
+                clientId, status, createdById, clientSearch, orderNumber, sortBy, sortDir, page, size));
     }
 
     @GetMapping("/{id}")

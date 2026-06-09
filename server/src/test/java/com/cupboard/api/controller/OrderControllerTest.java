@@ -91,18 +91,19 @@ class OrderControllerTest {
                 .andExpect(jsonPath("$.data.status").value("DRAFT"));
     }
 
-    // ── Get all ───────────────────────────────────────────────────────────────
+    // ── Get all (paginated) ───────────────────────────────────────────────────
 
     @Test
-    void getAllOrders_noFilters_returnsAllOrders() throws Exception {
+    void getAllOrders_noFilters_returnsPagedResponse() throws Exception {
         String body = mockMvc.perform(get("/api/orders")
                         .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.content").isArray())
+                .andExpect(jsonPath("$.data.totalElements").isNumber())
                 .andReturn().getResponse().getContentAsString();
 
-        // Seed data has 5 orders
-        assertThat(om.readTree(body).get("data").size()).isGreaterThanOrEqualTo(5);
+        assertThat(om.readTree(body).get("data").get("totalElements").asLong()).isGreaterThanOrEqualTo(5);
     }
 
     @Test
@@ -111,21 +112,176 @@ class OrderControllerTest {
                         .header("Authorization", "Bearer " + adminToken()))
                 .andReturn().getResponse().getContentAsString();
 
-        JsonNode data = om.readTree(body).get("data");
-        for (JsonNode o : data) {
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(1);
+        for (JsonNode o : content) {
             assertThat(o.get("status").asText()).isEqualTo("FULFILLED");
         }
     }
 
     @Test
-    void getAllOrders_filterByClient_returnsClientOrders() throws Exception {
+    void getAllOrders_filterByClientId_returnsOnlyThatClientsOrders() throws Exception {
         String body = mockMvc.perform(get("/api/orders?clientId=1")
                         .header("Authorization", "Bearer " + adminToken()))
                 .andReturn().getResponse().getContentAsString();
 
-        JsonNode data = om.readTree(body).get("data");
-        for (JsonNode o : data) {
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(1);
+        for (JsonNode o : content) {
             assertThat(o.get("clientId").asLong()).isEqualTo(1L);
+        }
+    }
+
+    @Test
+    void getAllOrders_searchByClientName_returnsMatchingOrders() throws Exception {
+        // "Blue Bottle Kailua" is client 1 — has 2 seed orders
+        String body = mockMvc.perform(get("/api/orders?clientSearch=blue")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(2);
+        for (JsonNode o : content) {
+            assertThat(o.get("clientName").asText().toLowerCase()).contains("blue");
+        }
+    }
+
+    @Test
+    void getAllOrders_searchByOrderNumber_returnsMatchingOrders() throws Exception {
+        String body = mockMvc.perform(get("/api/orders?orderNumber=1")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(1);
+        boolean foundOrder1 = false;
+        for (JsonNode o : content) {
+            assertThat(String.valueOf(o.get("id").asLong())).contains("1");
+            if (o.get("id").asLong() == 1L) foundOrder1 = true;
+        }
+        assertThat(foundOrder1).isTrue();
+    }
+
+    @Test
+    void getAllOrders_filterByCreatedById_returnsOnlyThatUsersOrders() throws Exception {
+        // user 1 (ashley) created orders 1, 3, 5 in seed data
+        String body = mockMvc.perform(get("/api/orders?createdById=1")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode data = om.readTree(body).get("data");
+        JsonNode content = data.get("content");
+        assertThat(data.get("totalElements").asLong()).isGreaterThanOrEqualTo(3);
+        for (JsonNode o : content) {
+            assertThat(o.get("createdByName").asText().toLowerCase()).contains("ashley");
+        }
+    }
+
+    @Test
+    void getAllOrders_sortByCreatedAtDesc_mostRecentFirst() throws Exception {
+        // Default sort is createdAt desc — order 4 (2026-05-28) should be first
+        String body = mockMvc.perform(get("/api/orders?sortBy=createdAt&sortDir=desc")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(2);
+        String first = content.get(0).get("createdAt").asText();
+        String second = content.get(1).get("createdAt").asText();
+        assertThat(first.compareTo(second)).isGreaterThanOrEqualTo(0);
+    }
+
+    @Test
+    void getAllOrders_sortByCreatedAtAsc_earliestFirst() throws Exception {
+        // order 1 (2026-01-15) should be first
+        String body = mockMvc.perform(get("/api/orders?sortBy=createdAt&sortDir=asc")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(2);
+        String first = content.get(0).get("createdAt").asText();
+        String second = content.get(1).get("createdAt").asText();
+        assertThat(first.compareTo(second)).isLessThanOrEqualTo(0);
+        // order 1 has the earliest createdAt in seed data
+        assertThat(content.get(0).get("id").asLong()).isEqualTo(1L);
+    }
+
+    @Test
+    void getAllOrders_sortByNeedByAsc_nullNeedByLast() throws Exception {
+        // seed order 4 has null needBy — must appear last
+        String body = mockMvc.perform(get("/api/orders?sortBy=needBy&sortDir=asc")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(4);
+        // First result should have the earliest needBy (order 1: 2026-01-18)
+        assertThat(content.get(0).get("id").asLong()).isEqualTo(1L);
+        // Last result should have null needBy (order 4)
+        JsonNode last = content.get(content.size() - 1);
+        assertThat(last.get("needBy").isNull()).isTrue();
+    }
+
+    @Test
+    void getAllOrders_sortByNeedByDesc_nullNeedByStillLast() throws Exception {
+        // null needBy must be last regardless of sort direction
+        String body = mockMvc.perform(get("/api/orders?sortBy=needBy&sortDir=desc")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(4);
+        // First result should have the latest needBy (order 5: 2026-04-10)
+        assertThat(content.get(0).get("id").asLong()).isEqualTo(5L);
+        // Last result should have null needBy (order 4)
+        JsonNode last = content.get(content.size() - 1);
+        assertThat(last.get("needBy").isNull()).isTrue();
+    }
+
+    @Test
+    void getAllOrders_statusFilterWithSortByNeedBy_combinedBehavior() throws Exception {
+        // FULFILLED orders: 1 (needBy=2026-01-18) and 5 (needBy=2026-04-10)
+        // Sorted needBy ASC → order 1 first, order 5 last
+        String body = mockMvc.perform(get("/api/orders?status=FULFILLED&sortBy=needBy&sortDir=asc")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(2);
+        for (JsonNode o : content) {
+            assertThat(o.get("status").asText()).isEqualTo("FULFILLED");
+        }
+        assertThat(content.get(0).get("id").asLong()).isEqualTo(1L);
+        assertThat(content.get(1).get("id").asLong()).isEqualTo(5L);
+    }
+
+    @Test
+    void getAllOrders_pagination_page0Size2_returnsCorrectMetadata() throws Exception {
+        String body = mockMvc.perform(get("/api/orders?page=0&size=2")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode data = om.readTree(body).get("data");
+        assertThat(data.get("content").size()).isEqualTo(2);
+        assertThat(data.get("currentPage").asInt()).isEqualTo(0);
+        assertThat(data.get("totalPages").asInt()).isGreaterThanOrEqualTo(3);
+        assertThat(data.get("first").asBoolean()).isTrue();
+        assertThat(data.get("last").asBoolean()).isFalse();
+    }
+
+    @Test
+    void getAllOrders_combinedFilters_returnsIntersection() throws Exception {
+        // client 1 + FULFILLED → order 1 only
+        String body = mockMvc.perform(get("/api/orders?clientId=1&status=FULFILLED")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(1);
+        for (JsonNode o : content) {
+            assertThat(o.get("clientId").asLong()).isEqualTo(1L);
+            assertThat(o.get("status").asText()).isEqualTo("FULFILLED");
         }
     }
 

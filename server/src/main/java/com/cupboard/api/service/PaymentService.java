@@ -1,11 +1,16 @@
 package com.cupboard.api.service;
 
+import com.cupboard.api.dto.PagedResponse;
 import com.cupboard.api.dto.payment.PaymentResponse;
 import com.cupboard.api.dto.payment.PaymentStatsResponse;
 import com.cupboard.api.entity.Payment;
+import com.cupboard.api.enums.PaymentMethod;
+import com.cupboard.api.enums.PaymentStatus;
 import com.cupboard.api.exception.EntityNotFoundException;
 import com.cupboard.api.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,11 +23,15 @@ public class PaymentService {
     @Autowired private PaymentRepository paymentRepository;
 
     @Transactional(readOnly = true)
-    public List<PaymentResponse> getAllPayments(Long invoiceId) {
-        List<Payment> payments = invoiceId != null
-                ? paymentRepository.findAllByInvoiceId(invoiceId)
-                : paymentRepository.findAll();
-        return payments.stream().map(this::toResponse).toList();
+    public PagedResponse<PaymentResponse> getPaymentsPaginated(
+            PaymentStatus status, PaymentMethod paymentMethod, String search, int page, int size) {
+        String searchLike = (search == null || search.isBlank()) ? null : "%" + search.toLowerCase() + "%";
+        Page<Payment> paymentPage = paymentRepository.findAllFiltered(
+                status, paymentMethod, searchLike, PageRequest.of(page, size));
+        List<PaymentResponse> content = paymentPage.getContent().stream().map(this::toResponse).toList();
+        return new PagedResponse<>(content, paymentPage.getNumber(), paymentPage.getTotalPages(),
+                paymentPage.getTotalElements(), paymentPage.getSize(),
+                paymentPage.isFirst(), paymentPage.isLast());
     }
 
     @Transactional(readOnly = true)

@@ -1,5 +1,6 @@
 package com.cupboard.api.service;
 
+import com.cupboard.api.dto.PagedResponse;
 import com.cupboard.api.dto.order.*;
 import com.cupboard.api.entity.*;
 import com.cupboard.api.enums.InvoiceStatus;
@@ -8,6 +9,9 @@ import com.cupboard.api.exception.EntityNotFoundException;
 import com.cupboard.api.exception.ValidationException;
 import com.cupboard.api.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,11 +33,33 @@ public class OrderService {
     // ── Queries ───────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<OrderSummaryResponse> getAllOrders(Long clientId, OrderStatus status, Long createdById) {
-        return orderRepository.findAllWithFilters(clientId, status, createdById)
-                .stream()
-                .map(this::toSummaryResponse)
-                .toList();
+    public PagedResponse<OrderSummaryResponse> getOrdersPaginated(
+            Long clientId, OrderStatus status, Long createdById,
+            String clientSearch, String orderNumber,
+            String sortBy, String sortDir, int page, int size) {
+        Sort sort;
+        if ("needBy".equals(sortBy)) {
+            sort = Sort.by(
+                new Sort.Order("asc".equals(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC, "needBy")
+                    .nullsLast(),
+                Sort.Order.desc("createdAt")
+            );
+        } else {
+            sort = Sort.by(Sort.Direction.fromString(sortDir), "createdAt");
+        }
+        String clientSearchLike = (clientSearch == null || clientSearch.isBlank())
+                ? null : "%" + clientSearch.toLowerCase() + "%";
+        String orderNumberLike = (orderNumber == null || orderNumber.isBlank())
+                ? null : "%" + orderNumber + "%";
+        Page<Order> orderPage = orderRepository.findAllFiltered(
+                clientId, status, createdById,
+                clientSearchLike, orderNumberLike,
+                PageRequest.of(page, size, sort));
+        List<OrderSummaryResponse> content = orderPage.getContent().stream()
+                .map(this::toSummaryResponse).toList();
+        return new PagedResponse<>(content, orderPage.getNumber(), orderPage.getTotalPages(),
+                orderPage.getTotalElements(), orderPage.getSize(),
+                orderPage.isFirst(), orderPage.isLast());
     }
 
     @Transactional(readOnly = true)

@@ -82,7 +82,7 @@ export default function NewOrderPage() {
 
   useEffect(() => {
     getClients().then(setClients)
-    getProducts().then(setProducts)
+    getProducts({ size: 1000 }).then(r => setProducts(r.content))
   }, [])
 
   const filteredClients = clients

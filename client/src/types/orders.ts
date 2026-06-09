@@ -2,6 +2,8 @@ import type { CurrencyCode } from '@/lib/currency'
 
 export type OrderStatus = 'DRAFT' | 'CONFIRMED' | 'SHIPPED' | 'FULFILLED'
 export type InvoiceStatus = 'DRAFT' | 'FINALIZED' | 'SENT' | 'PAID' | 'OVERDUE' | 'REFUNDED'
+export type OrderSortBy = 'createdAt' | 'needBy'
+export type SortDir = 'asc' | 'desc'
 
 export interface OrderItem {
   id: number
