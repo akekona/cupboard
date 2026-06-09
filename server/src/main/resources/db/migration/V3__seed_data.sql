@@ -11,10 +11,10 @@ INSERT INTO roles (name, description) VALUES
 -- ── Users ─────────────────────────────────────────────────────────────────────
 -- password_hash = bcrypt('password123', cost=10)
 INSERT INTO users (email, first_name, last_name, password_hash, account_status, created_at, updated_at) VALUES
-  ('ashley@cupboard.test', 'Ashley', 'Kekona', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LPVKKi8dHm6', 'ACTIVE',   NOW() - INTERVAL '180 days', NOW()),
-  ('kai@cupboard.test',    'Kai',    'Mauga',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LPVKKi8dHm6', 'ACTIVE',   NOW() - INTERVAL '150 days', NOW()),
-  ('jamie@cupboard.test',  'Jamie',  'Lum',    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LPVKKi8dHm6', 'ACTIVE',   NOW() - INTERVAL '120 days', NOW()),
-  ('tiana@cupboard.test',  'Tiana',  'Pua',    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LPVKKi8dHm6', 'INACTIVE', NOW() - INTERVAL '90 days',  NOW());
+  ('ashley@cupboard.test', 'Ashley', 'Kekona', '$2a$10$2B/m47ueducyAaiFmRxs7eX4J72cPEqsmPe9v8vzwE4ZXreYPGNnO', 'ACTIVE',   NOW() - INTERVAL '180 days', NOW()),
+  ('kai@cupboard.test',    'Kai',    'Mauga',  '$2a$10$2B/m47ueducyAaiFmRxs7eX4J72cPEqsmPe9v8vzwE4ZXreYPGNnO', 'ACTIVE',   NOW() - INTERVAL '150 days', NOW()),
+  ('jamie@cupboard.test',  'Jamie',  'Lum',    '$2a$10$2B/m47ueducyAaiFmRxs7eX4J72cPEqsmPe9v8vzwE4ZXreYPGNnO', 'ACTIVE',   NOW() - INTERVAL '120 days', NOW()),
+  ('tiana@cupboard.test',  'Tiana',  'Pua',    '$2a$10$2B/m47ueducyAaiFmRxs7eX4J72cPEqsmPe9v8vzwE4ZXreYPGNnO', 'INACTIVE', NOW() - INTERVAL '90 days',  NOW());
 
 INSERT INTO user_auth_providers (user_id, provider, provider_id, created_at) VALUES
   (1, 'LOCAL', NULL, NOW() - INTERVAL '180 days'),
