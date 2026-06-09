@@ -1,5 +1,5 @@
 import { getAuthCookie } from '@/lib/auth'
-import type { Invoice, InvoiceSummary, InvoiceStats, Payment, PaymentStats } from '@/types/invoices'
+import type { Invoice, InvoiceSummary, InvoiceStats, Payment, PaymentStats, PaymentStatus, PaymentMethod } from '@/types/invoices'
 
 const BASE = 'http://localhost:8080'
 
@@ -61,5 +61,20 @@ export const markOverdue     = (id: number) => req<Invoice>(`/api/invoices/${id}
 export const markPaid        = (id: number) => req<Invoice>(`/api/invoices/${id}/mark-paid`, 'PATCH')
 export const refundInvoice   = (id: number) => req<Invoice>(`/api/invoices/${id}/refund`, 'PATCH')
 
-export const getPayments     = ()            => req<Payment[]>('/api/payments')
+export function getPayments(params?: {
+  status?: PaymentStatus
+  paymentMethod?: PaymentMethod
+  search?: string
+  page?: number
+  size?: number
+}): Promise<PagedResponse<Payment>> {
+  const query = new URLSearchParams()
+  if (params?.status) query.set('status', params.status)
+  if (params?.paymentMethod) query.set('paymentMethod', params.paymentMethod)
+  if (params?.search) query.set('search', params.search)
+  query.set('page', String(params?.page ?? 0))
+  query.set('size', String(params?.size ?? 50))
+  const qs = query.toString()
+  return req<PagedResponse<Payment>>(`/api/payments${qs ? `?${qs}` : ''}`)
+}
 export const getPaymentStats = ()            => req<PaymentStats>('/api/payments/stats')
