@@ -24,12 +24,16 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             "  LOWER(p.stripePaymentId) LIKE :search OR " +
             "  LOWER(p.stripeInvoiceId) LIKE :search OR " +
             "  LOWER(p.invoice.client.name) LIKE :search OR " +
-            "  LOWER(p.invoice.invoiceNumber) LIKE :search)) " +
+            "  LOWER(p.invoice.invoiceNumber) LIKE :search)) AND " +
+            "p.createdAt >= :startDate AND " +
+            "p.createdAt < :endDate " +
             "ORDER BY p.createdAt DESC")
     Page<Payment> findAllFiltered(
             @Param("status") PaymentStatus status,
             @Param("paymentMethod") PaymentMethod paymentMethod,
             @Param("search") String search,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
             Pageable pageable
     );
     Optional<Payment> findByStripePaymentId(String stripePaymentId);

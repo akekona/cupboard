@@ -24,10 +24,23 @@ public class PaymentService {
 
     @Transactional(readOnly = true)
     public PagedResponse<PaymentResponse> getPaymentsPaginated(
-            PaymentStatus status, PaymentMethod paymentMethod, String search, int page, int size) {
-        String searchLike = (search == null || search.isBlank()) ? null : "%" + search.toLowerCase() + "%";
+            PaymentStatus status, PaymentMethod paymentMethod, String search,
+            Integer month, Integer year, int page, int size) {
+        String searchParam = (search == null || search.isBlank()) ? null : "%" + search.toLowerCase() + "%";
+        LocalDateTime startDate;
+        LocalDateTime endDate;
+        if (month != null && year != null) {
+            startDate = LocalDateTime.of(year, month, 1, 0, 0);
+            endDate = startDate.plusMonths(1);
+        } else if (year != null) {
+            startDate = LocalDateTime.of(year, 1, 1, 0, 0);
+            endDate = startDate.plusYears(1);
+        } else {
+            startDate = LocalDateTime.of(1970, 1, 1, 0, 0);
+            endDate = LocalDateTime.of(2099, 12, 31, 23, 59, 59);
+        }
         Page<Payment> paymentPage = paymentRepository.findAllFiltered(
-                status, paymentMethod, searchLike, PageRequest.of(page, size));
+                status, paymentMethod, searchParam, startDate, endDate, PageRequest.of(page, size));
         List<PaymentResponse> content = paymentPage.getContent().stream().map(this::toResponse).toList();
         return new PagedResponse<>(content, paymentPage.getNumber(), paymentPage.getTotalPages(),
                 paymentPage.getTotalElements(), paymentPage.getSize(),

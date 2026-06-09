@@ -65,6 +65,8 @@ export function getPayments(params?: {
   status?: PaymentStatus
   paymentMethod?: PaymentMethod
   search?: string
+  month?: number
+  year?: number
   page?: number
   size?: number
 }): Promise<PagedResponse<Payment>> {
@@ -72,6 +74,8 @@ export function getPayments(params?: {
   if (params?.status) query.set('status', params.status)
   if (params?.paymentMethod) query.set('paymentMethod', params.paymentMethod)
   if (params?.search) query.set('search', params.search)
+  if (params?.month) query.set('month', String(params.month))
+  if (params?.year) query.set('year', String(params.year))
   query.set('page', String(params?.page ?? 0))
   query.set('size', String(params?.size ?? 50))
   const qs = query.toString()

@@ -27,6 +27,12 @@ export default function PaymentsPage() {
   const [methodFilter, setMethodFilter] = useState<PaymentMethod | ''>(() => (searchParams.get('method') ?? '') as PaymentMethod | '')
   const [searchValue, setSearchValue] = useState(() => searchParams.get('search') ?? '')
   const [activeSearch, setActiveSearch] = useState(() => searchParams.get('search') ?? '')
+  const [monthFilter, setMonthFilter] = useState<number | null>(() => {
+    const m = searchParams.get('month'); return m ? Number(m) : null
+  })
+  const [yearFilter, setYearFilter] = useState<number | null>(() => {
+    const y = searchParams.get('year'); return y ? Number(y) : null
+  })
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -40,6 +46,8 @@ export default function PaymentsPage() {
       status: statusFilter || undefined,
       paymentMethod: methodFilter || undefined,
       search: activeSearch || undefined,
+      month: monthFilter ?? undefined,
+      year: yearFilter ?? undefined,
       page: currentPage,
       size: PAGE_SIZE,
     })
@@ -47,7 +55,7 @@ export default function PaymentsPage() {
       .catch(() => {})
       .finally(() => { if (!cancelled) setIsLoading(false) })
     return () => { cancelled = true }
-  }, [statusFilter, methodFilter, activeSearch, currentPage])
+  }, [statusFilter, methodFilter, activeSearch, monthFilter, yearFilter, currentPage])
 
   useEffect(() => {
     if (skipFirstSync.current) { skipFirstSync.current = false; return }
@@ -55,10 +63,12 @@ export default function PaymentsPage() {
     if (activeSearch) params.set('search', activeSearch)
     if (statusFilter) params.set('status', statusFilter)
     if (methodFilter) params.set('method', methodFilter)
+    if (monthFilter) params.set('month', String(monthFilter))
+    if (yearFilter) params.set('year', String(yearFilter))
     if (currentPage > 0) params.set('page', String(currentPage))
     const qs = params.toString()
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
-  }, [activeSearch, statusFilter, methodFilter, currentPage])
+  }, [activeSearch, statusFilter, methodFilter, monthFilter, yearFilter, currentPage])
 
   function handleSearchSubmit() {
     setActiveSearch(searchValue)
@@ -81,6 +91,16 @@ export default function PaymentsPage() {
     setCurrentPage(0)
   }
 
+  function handleMonthChange(month: number | null) {
+    setMonthFilter(month)
+    setCurrentPage(0)
+  }
+
+  function handleYearChange(year: number | null) {
+    setYearFilter(year)
+    setCurrentPage(0)
+  }
+
   return (
     <div className="page-container">
       <h1 className="text-xl font-semibold text-gray-900 mb-4 md:mb-6">Payments</h1>
@@ -91,16 +111,32 @@ export default function PaymentsPage() {
         { label: 'Refunded', value: stats ? formatCurrency(stats.refunded, 'USD') : '—', valueClassName: stats && stats.refunded > 0 ? 'text-red-600' : undefined },
       ]} />
 
+      {(monthFilter !== null || yearFilter !== null) && (() => {
+        const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December']
+        const monthName = monthFilter ? MONTH_NAMES[monthFilter - 1] : 'All months'
+        const currentYear = new Date().getFullYear()
+        return (
+          <p className="text-xs text-muted-foreground mt-2">
+            Stats above show current month totals. Table filtered by {monthName} {yearFilter ?? currentYear}.
+          </p>
+        )
+      })()}
+
       <PaymentSearchRow
         searchValue={searchValue}
         activeSearch={activeSearch}
         statusFilter={statusFilter}
         methodFilter={methodFilter}
+        monthFilter={monthFilter}
+        yearFilter={yearFilter}
         onSearchChange={setSearchValue}
         onSearchSubmit={handleSearchSubmit}
         onClearSearch={handleClearSearch}
         onStatusChange={handleStatusChange}
         onMethodChange={handleMethodChange}
+        onMonthChange={handleMonthChange}
+        onYearChange={handleYearChange}
       />
 
       <PaymentsTable
