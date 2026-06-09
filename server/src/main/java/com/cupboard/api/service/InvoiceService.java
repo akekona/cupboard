@@ -129,6 +129,10 @@ public class InvoiceService {
                     .setDaysUntilDue(30L)
                     .putMetadata("cupboard_invoice_id", invoice.getId().toString())
                     .putMetadata("cupboard_invoice_number", invoice.getInvoiceNumber())
+                    .putMetadata("cupboard_order_id", invoice.getOrder().getId().toString())
+                    .putMetadata("cupboard_client_id", invoice.getClient().getId().toString())
+                    .putMetadata("cupboard_client_name", invoice.getClient().getName())
+                    .putMetadata("environment", "test")
                     .build();
             com.stripe.model.Invoice stripeInvoice = com.stripe.model.Invoice.create(invoiceParams);
 
