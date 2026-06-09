@@ -1,26 +1,48 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Plus, Sparkles } from 'lucide-react'
 import { getProducts, deleteProduct } from '@/lib/api/catalog'
 import { getAuthUser, isAdmin } from '@/lib/auth'
 import { AddProductModal } from '@/components/modals/AddProductModal'
 import { ConfirmModal } from '@/components/modals/ConfirmModal'
 import { PageHeader } from '@/components/common/PageHeader'
-import { CategoryPills } from '@/components/pages/products/CategoryPills'
 import { ProductsTable } from '@/components/pages/products/ProductsTable'
+import { ProductSearchCard } from '@/components/pages/products/ProductSearchCard'
+import { ProductFiltersCard, type StockStatus } from '@/components/pages/products/ProductFiltersCard'
+import { ProductFiltersMobile } from '@/components/pages/products/ProductFiltersMobile'
 import type { Product, ProductCategory } from '@/types/catalog'
 
+type SearchMode = 'name' | 'sku'
+
 export default function ProductsPage() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // Filter state — initialized from URL on first render
+  const [selectedCategories, setSelectedCategories] = useState<ProductCategory[]>(
+    () => (searchParams.get('category') ?? '').split(',').filter(Boolean) as ProductCategory[]
+  )
+  const [selectedStatuses, setSelectedStatuses] = useState<StockStatus[]>(
+    () => (searchParams.get('status') ?? '').split(',').filter(Boolean) as StockStatus[]
+  )
+  const [searchMode, setSearchMode] = useState<SearchMode>(
+    () => (searchParams.get('search') ?? '').includes(',') ? 'sku' : 'name'
+  )
+  const [searchInput, setSearchInput] = useState(() => searchParams.get('search') ?? '')
+  const [activeSearchFilter, setActiveSearchFilter] = useState(() => searchParams.get('search') ?? '')
+
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeCategory, setActiveCategory] = useState<ProductCategory | 'ALL'>('ALL')
   const [showAI, setShowAI] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null)
   const [deleting, setDeleting] = useState(false)
   const admin = isAdmin(getAuthUser() ?? { roles: [] } as never)
+  const skipFirstSync = useRef(true)
 
   async function load() {
     setLoading(true)
@@ -30,7 +52,74 @@ export default function ProductsPage() {
 
   useEffect(() => { load() }, [])
 
-  const displayed = activeCategory === 'ALL' ? products : products.filter(p => p.category === activeCategory)
+  // Sync filter state to URL (skip first render — state already matches URL)
+  useEffect(() => {
+    if (skipFirstSync.current) { skipFirstSync.current = false; return }
+    const params = new URLSearchParams()
+    if (selectedCategories.length) params.set('category', selectedCategories.join(','))
+    if (selectedStatuses.length) params.set('status', selectedStatuses.join(','))
+    if (activeSearchFilter) params.set('search', activeSearchFilter)
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [selectedCategories, selectedStatuses, activeSearchFilter])
+
+  const displayed = useMemo(() =>
+    products.filter(product => {
+      const matchesSearch = !activeSearchFilter || (() => {
+        if (activeSearchFilter.includes(',')) {
+          const skus = activeSearchFilter.split(',').map(s => s.trim().toLowerCase())
+          return skus.includes(product.sku.toLowerCase())
+        }
+        return (
+          product.name.toLowerCase().includes(activeSearchFilter.toLowerCase()) ||
+          product.sku.toLowerCase().includes(activeSearchFilter.toLowerCase())
+        )
+      })()
+
+      const matchesCategory = selectedCategories.length === 0 ||
+        selectedCategories.includes(product.category)
+
+      const matchesStatus = selectedStatuses.length === 0 ||
+        selectedStatuses.some(status => {
+          if (status === 'IN_STOCK') return product.stockQuantity > product.reorderThreshold
+          if (status === 'LOW_STOCK') return product.stockQuantity > 0 && product.stockQuantity <= product.reorderThreshold
+          if (status === 'OUT_OF_STOCK') return product.stockQuantity === 0
+          return true
+        })
+
+      return matchesSearch && matchesCategory && matchesStatus
+    }), [products, activeSearchFilter, selectedCategories, selectedStatuses]
+  )
+
+  const skuNotFound = useMemo(() => {
+    if (!activeSearchFilter.includes(',')) return []
+    const inputSkus = activeSearchFilter.split(',').map(s => s.trim()).filter(Boolean)
+    const foundSkus = new Set(products.map(p => p.sku.toLowerCase()))
+    return inputSkus.filter(sku => !foundSkus.has(sku.toLowerCase()))
+  }, [activeSearchFilter, products])
+
+  function handleSearch() {
+    setActiveSearchFilter(searchInput)
+  }
+
+  function handleClearSearch() {
+    setSearchInput('')
+    setActiveSearchFilter('')
+  }
+
+  function handleModeChange(mode: SearchMode) {
+    setSearchMode(mode)
+    setSearchInput('')
+    setActiveSearchFilter('')
+  }
+
+  function toggleCategory(cat: ProductCategory) {
+    setSelectedCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat])
+  }
+
+  function toggleStatus(status: StockStatus) {
+    setSelectedStatuses(prev => prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status])
+  }
 
   async function handleDeleteConfirm() {
     if (!pendingDelete) return
@@ -41,6 +130,16 @@ export default function ProductsPage() {
       setPendingDelete(null)
     } catch { setPendingDelete(null) }
     finally { setDeleting(false) }
+  }
+
+  const filterProps = {
+    selectedCategories,
+    selectedStatuses,
+    onCategoryToggle: toggleCategory,
+    onStatusToggle: toggleStatus,
+    onClearCategories: () => setSelectedCategories([]),
+    onClearStatuses: () => setSelectedStatuses([]),
+    onClearAll: () => { setSelectedCategories([]); setSelectedStatuses([]) },
   }
 
   return (
@@ -77,7 +176,26 @@ export default function ProductsPage() {
         </div>
       )}
 
-      <CategoryPills selected={activeCategory} onChange={setActiveCategory} />
+      <ProductSearchCard
+        mode={searchMode}
+        inputValue={searchInput}
+        onModeChange={handleModeChange}
+        onInputChange={setSearchInput}
+        onSearch={handleSearch}
+        onClear={handleClearSearch}
+      />
+
+      <ProductFiltersCard {...filterProps} />
+      <ProductFiltersMobile {...filterProps} />
+
+      <p className="text-xs text-muted-foreground mb-3">
+        Showing {displayed.length} of {products.length} products
+      </p>
+      {skuNotFound.length > 0 && (
+        <p className="text-xs text-amber-600 mb-3">
+          {skuNotFound.length} of {activeSearchFilter.split(',').filter(s => s.trim()).length} SKUs not found: {skuNotFound.join(', ')}
+        </p>
+      )}
 
       <ProductsTable
         products={displayed}

@@ -112,9 +112,14 @@ export function StaffDashboard({ recentOrders, lowStockCount, firstName }: Props
               {' '}below reorder threshold
             </p>
           </div>
-          <Link href="/dashboard/products" className="text-xs font-medium text-amber-700 hover:underline whitespace-nowrap">
-            View products →
-          </Link>
+          <div className="flex flex-col items-end gap-1">
+            <Link href="/dashboard/products?status=LOW_STOCK" className="text-xs font-medium text-amber-700 hover:underline whitespace-nowrap">
+              View low stock →
+            </Link>
+            <Link href="/dashboard/products?status=OUT_OF_STOCK" className="text-xs font-medium text-amber-700 hover:underline whitespace-nowrap">
+              View out of stock →
+            </Link>
+          </div>
         </div>
       )}
     </div>

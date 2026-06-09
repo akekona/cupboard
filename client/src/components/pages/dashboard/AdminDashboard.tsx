@@ -55,6 +55,9 @@ export function AdminDashboard({ data, currency }: Props) {
             value: String(stats.lowStockCount),
             subtext: stats.lowStockCount > 0 ? 'Needs restock' : 'All stocked',
             valueClassName: stats.lowStockCount > 0 ? 'text-amber-600' : undefined,
+            link: stats.lowStockCount > 0
+              ? { href: '/dashboard/products?status=LOW_STOCK', label: 'View →' }
+              : undefined,
           },
         ]}
       />
