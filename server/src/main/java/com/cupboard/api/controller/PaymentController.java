@@ -21,9 +21,11 @@ public class PaymentController {
             @RequestParam(required = false) PaymentStatus status,
             @RequestParam(required = false) PaymentMethod paymentMethod,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        return ApiResponse.ok(paymentService.getPaymentsPaginated(status, paymentMethod, search, page, size));
+        return ApiResponse.ok(paymentService.getPaymentsPaginated(status, paymentMethod, search, month, year, page, size));
     }
 
     @GetMapping("/stats")
