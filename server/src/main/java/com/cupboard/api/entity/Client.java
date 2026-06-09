@@ -38,6 +38,9 @@ public class Client {
     @Column(name = "account_status", nullable = false, length = 20)
     private String accountStatus = "ACTIVE";
 
+    @Column(name = "stripe_customer_id")
+    private String stripeCustomerId;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
