@@ -35,7 +35,7 @@ export function ActivityFeed({ activities }: Props) {
   return (
     <div className="space-y-3">
       {items.map(a => (
-        <div key={a.id} className="flex items-start gap-3">
+        <div key={`${a.type}-${a.id}`} className="flex items-start gap-3">
           <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${DOT[a.type]}`} />
           <div className="flex-1 min-w-0">
             <p className="text-sm text-gray-900 leading-snug">{a.description}</p>

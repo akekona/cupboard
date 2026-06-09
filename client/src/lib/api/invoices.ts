@@ -1,17 +1,9 @@
-import { getAuthCookie } from '@/lib/auth'
+import { apiFetch } from './base'
 import type { Invoice, InvoiceSummary, InvoiceStats, Payment, PaymentStats, PaymentStatus, PaymentMethod } from '@/types/invoices'
 
-const BASE = 'http://localhost:8080'
-
 async function req<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
-  const token = getAuthCookie()
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await apiFetch(path, {
     method,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   })
 
