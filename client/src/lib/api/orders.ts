@@ -5,6 +5,7 @@ import type {
   CreateOrderRequest,
   UpdateOrderRequest,
 } from '@/types/orders'
+import type { PagedResponse } from '@/types/common'
 
 interface ApiResponse<T> {
   success: boolean
@@ -18,17 +19,23 @@ async function unwrap<T>(promise: Promise<ApiResponse<T>>): Promise<T> {
   return res.data
 }
 
-export function getOrders(filters?: {
+export function getOrders(params?: {
   clientId?: number
   status?: string
   createdById?: number
-}): Promise<OrderSummary[]> {
-  const params = new URLSearchParams()
-  if (filters?.clientId) params.set('clientId', String(filters.clientId))
-  if (filters?.status) params.set('status', filters.status)
-  if (filters?.createdById) params.set('createdById', String(filters.createdById))
-  const qs = params.toString()
-  return unwrap(api.get<ApiResponse<OrderSummary[]>>(`/api/orders${qs ? `?${qs}` : ''}`))
+  search?: string
+  page?: number
+  size?: number
+}): Promise<PagedResponse<OrderSummary>> {
+  const query = new URLSearchParams()
+  if (params?.clientId) query.set('clientId', String(params.clientId))
+  if (params?.status) query.set('status', params.status)
+  if (params?.createdById) query.set('createdById', String(params.createdById))
+  if (params?.search) query.set('search', params.search)
+  query.set('page', String(params?.page ?? 0))
+  query.set('size', String(params?.size ?? 50))
+  const qs = query.toString()
+  return unwrap(api.get<ApiResponse<PagedResponse<OrderSummary>>>(`/api/orders${qs ? `?${qs}` : ''}`))
 }
 
 export const getOrderById = (id: number) =>

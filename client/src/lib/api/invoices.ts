@@ -30,12 +30,23 @@ async function req<T>(path: string, method = 'GET', body?: unknown): Promise<T> 
   return json?.data
 }
 
-export function getInvoices(filters?: { clientId?: number; status?: string }): Promise<InvoiceSummary[]> {
-  const params = new URLSearchParams()
-  if (filters?.clientId) params.set('clientId', String(filters.clientId))
-  if (filters?.status) params.set('status', filters.status)
-  const qs = params.toString()
-  return req(`/api/invoices${qs ? `?${qs}` : ''}`)
+import type { PagedResponse } from '@/types/common'
+
+export function getInvoices(params?: {
+  clientId?: number
+  status?: string
+  search?: string
+  page?: number
+  size?: number
+}): Promise<PagedResponse<InvoiceSummary>> {
+  const query = new URLSearchParams()
+  if (params?.clientId) query.set('clientId', String(params.clientId))
+  if (params?.status) query.set('status', params.status)
+  if (params?.search) query.set('search', params.search)
+  query.set('page', String(params?.page ?? 0))
+  query.set('size', String(params?.size ?? 50))
+  const qs = query.toString()
+  return req<PagedResponse<InvoiceSummary>>(`/api/invoices${qs ? `?${qs}` : ''}`)
 }
 
 export const getInvoiceById   = (id: number) => req<Invoice>(`/api/invoices/${id}`)

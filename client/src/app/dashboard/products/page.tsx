@@ -8,20 +8,23 @@ import { getAuthUser, isAdmin } from '@/lib/auth'
 import { AddProductModal } from '@/components/modals/AddProductModal'
 import { ConfirmModal } from '@/components/modals/ConfirmModal'
 import { PageHeader } from '@/components/common/PageHeader'
+import { Pagination } from '@/components/common/Pagination'
 import { ProductsTable } from '@/components/pages/products/ProductsTable'
 import { ProductSearchCard } from '@/components/pages/products/ProductSearchCard'
 import { ProductFiltersCard, type StockStatus } from '@/components/pages/products/ProductFiltersCard'
 import { ProductFiltersMobile } from '@/components/pages/products/ProductFiltersMobile'
 import type { Product, ProductCategory } from '@/types/catalog'
+import type { PagedResponse } from '@/types/common'
 
 type SearchMode = 'name' | 'sku'
+
+const PAGE_SIZE = 50
 
 export default function ProductsPage() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  // Filter state — initialized from URL on first render
   const [selectedCategories, setSelectedCategories] = useState<ProductCategory[]>(
     () => (searchParams.get('category') ?? '').split(',').filter(Boolean) as ProductCategory[]
   )
@@ -31,94 +34,91 @@ export default function ProductsPage() {
   const [searchMode, setSearchMode] = useState<SearchMode>(
     () => (searchParams.get('search') ?? '').includes(',') ? 'sku' : 'name'
   )
-  const [searchInput, setSearchInput] = useState(() => searchParams.get('search') ?? '')
-  const [activeSearchFilter, setActiveSearchFilter] = useState(() => searchParams.get('search') ?? '')
+  const [inputValue, setInputValue] = useState(() => searchParams.get('search') ?? '')
+  const [activeSearch, setActiveSearch] = useState(() => searchParams.get('search') ?? '')
+  const [currentPage, setCurrentPage] = useState(() => Number(searchParams.get('page') ?? 0))
 
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
+  const [pagedData, setPagedData] = useState<PagedResponse<Product> | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [showAI, setShowAI] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [version, setVersion] = useState(0)
   const admin = isAdmin(getAuthUser() ?? { roles: [] } as never)
   const skipFirstSync = useRef(true)
 
-  async function load() {
-    setLoading(true)
-    try { setProducts(await getProducts()) } catch { /* handled */ }
-    finally { setLoading(false) }
-  }
+  // Fetch whenever filter state or page changes
+  useEffect(() => {
+    let cancelled = false
+    setIsLoading(true)
+    const isSkuMode = activeSearch.includes(',')
+    getProducts({
+      search: isSkuMode ? undefined : (activeSearch || undefined),
+      category: selectedCategories.length ? selectedCategories : undefined,
+      status: selectedStatuses.length ? selectedStatuses : undefined,
+      skus: isSkuMode ? activeSearch.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+      page: currentPage,
+      size: PAGE_SIZE,
+    })
+      .then(data => { if (!cancelled) setPagedData(data) })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setIsLoading(false) })
+    return () => { cancelled = true }
+  }, [currentPage, selectedCategories, selectedStatuses, activeSearch, version])
 
-  useEffect(() => { load() }, [])
-
-  // Sync filter state to URL (skip first render — state already matches URL)
+  // Sync filter + page state to URL (skip first render)
   useEffect(() => {
     if (skipFirstSync.current) { skipFirstSync.current = false; return }
     const params = new URLSearchParams()
     if (selectedCategories.length) params.set('category', selectedCategories.join(','))
     if (selectedStatuses.length) params.set('status', selectedStatuses.join(','))
-    if (activeSearchFilter) params.set('search', activeSearchFilter)
+    if (activeSearch) params.set('search', activeSearch)
+    if (currentPage > 0) params.set('page', String(currentPage))
     const qs = params.toString()
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
-  }, [selectedCategories, selectedStatuses, activeSearchFilter])
-
-  const displayed = useMemo(() =>
-    products.filter(product => {
-      const matchesSearch = !activeSearchFilter || (() => {
-        if (activeSearchFilter.includes(',')) {
-          const skus = activeSearchFilter.split(',').map(s => s.trim().toLowerCase())
-          return skus.includes(product.sku.toLowerCase())
-        }
-        return (
-          product.name.toLowerCase().includes(activeSearchFilter.toLowerCase()) ||
-          product.sku.toLowerCase().includes(activeSearchFilter.toLowerCase())
-        )
-      })()
-
-      const matchesCategory = selectedCategories.length === 0 ||
-        selectedCategories.includes(product.category)
-
-      const matchesStatus = selectedStatuses.length === 0 ||
-        selectedStatuses.some(status => {
-          if (status === 'IN_STOCK') return product.stockQuantity > product.reorderThreshold
-          if (status === 'LOW_STOCK') return product.stockQuantity > 0 && product.stockQuantity <= product.reorderThreshold
-          if (status === 'OUT_OF_STOCK') return product.stockQuantity === 0
-          return true
-        })
-
-      return matchesSearch && matchesCategory && matchesStatus
-    }), [products, activeSearchFilter, selectedCategories, selectedStatuses]
-  )
+  }, [selectedCategories, selectedStatuses, activeSearch, currentPage])
 
   const skuNotFound = useMemo(() => {
-    if (!activeSearchFilter.includes(',')) return []
-    const inputSkus = activeSearchFilter.split(',').map(s => s.trim()).filter(Boolean)
-    const foundSkus = new Set(products.map(p => p.sku.toLowerCase()))
+    if (!activeSearch.includes(',') || !pagedData) return []
+    const inputSkus = activeSearch.split(',').map(s => s.trim()).filter(Boolean)
+    const foundSkus = new Set(pagedData.content.map(p => p.sku.toLowerCase()))
     return inputSkus.filter(sku => !foundSkus.has(sku.toLowerCase()))
-  }, [activeSearchFilter, products])
+  }, [activeSearch, pagedData])
 
   function handleSearch() {
-    setActiveSearchFilter(searchInput)
+    setActiveSearch(inputValue)
+    setCurrentPage(0)
   }
 
   function handleClearSearch() {
-    setSearchInput('')
-    setActiveSearchFilter('')
+    setInputValue('')
+    setActiveSearch('')
+    setCurrentPage(0)
   }
 
   function handleModeChange(mode: SearchMode) {
     setSearchMode(mode)
-    setSearchInput('')
-    setActiveSearchFilter('')
+    setInputValue('')
+    setActiveSearch('')
+    setCurrentPage(0)
   }
 
   function toggleCategory(cat: ProductCategory) {
     setSelectedCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat])
+    setCurrentPage(0)
   }
 
   function toggleStatus(status: StockStatus) {
     setSelectedStatuses(prev => prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status])
+    setCurrentPage(0)
+  }
+
+  function clearFilters() {
+    setSelectedCategories([])
+    setSelectedStatuses([])
+    setCurrentPage(0)
   }
 
   async function handleDeleteConfirm() {
@@ -126,8 +126,8 @@ export default function ProductsPage() {
     setDeleting(true)
     try {
       await deleteProduct(pendingDelete.id)
-      setProducts(ps => ps.filter(p => p.id !== pendingDelete.id))
       setPendingDelete(null)
+      setVersion(v => v + 1)
     } catch { setPendingDelete(null) }
     finally { setDeleting(false) }
   }
@@ -137,9 +137,9 @@ export default function ProductsPage() {
     selectedStatuses,
     onCategoryToggle: toggleCategory,
     onStatusToggle: toggleStatus,
-    onClearCategories: () => setSelectedCategories([]),
-    onClearStatuses: () => setSelectedStatuses([]),
-    onClearAll: () => { setSelectedCategories([]); setSelectedStatuses([]) },
+    onClearCategories: () => { setSelectedCategories([]); setCurrentPage(0) },
+    onClearStatuses: () => { setSelectedStatuses([]); setCurrentPage(0) },
+    onClearAll: clearFilters,
   }
 
   return (
@@ -178,9 +178,9 @@ export default function ProductsPage() {
 
       <ProductSearchCard
         mode={searchMode}
-        inputValue={searchInput}
+        inputValue={inputValue}
         onModeChange={handleModeChange}
-        onInputChange={setSearchInput}
+        onInputChange={setInputValue}
         onSearch={handleSearch}
         onClear={handleClearSearch}
       />
@@ -188,25 +188,39 @@ export default function ProductsPage() {
       <ProductFiltersCard {...filterProps} />
       <ProductFiltersMobile {...filterProps} />
 
-      <p className="text-xs text-muted-foreground mb-3">
-        Showing {displayed.length} of {products.length} products
-      </p>
-      {skuNotFound.length > 0 && (
-        <p className="text-xs text-amber-600 mb-3">
-          {skuNotFound.length} of {activeSearchFilter.split(',').filter(s => s.trim()).length} SKUs not found: {skuNotFound.join(', ')}
+      {/* Result count + SKU warning */}
+      <div className="mb-3 space-y-1">
+        <p className="text-xs text-muted-foreground">
+          Showing {pagedData?.totalElements ?? 0} products
         </p>
-      )}
+        {skuNotFound.length > 0 && (
+          <p className="text-xs text-amber-600">
+            {skuNotFound.length} of {activeSearch.split(',').filter(s => s.trim()).length} SKUs not found: {skuNotFound.join(', ')}
+          </p>
+        )}
+      </div>
 
       <ProductsTable
-        products={displayed}
-        loading={loading}
+        products={pagedData?.content ?? []}
+        loading={isLoading}
         isAdmin={admin}
         onEdit={setEditing}
         onDelete={setPendingDelete}
       />
 
-      {showAdd && <AddProductModal onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); load() }} />}
-      {editing && <AddProductModal product={editing} onClose={() => setEditing(null)} onSuccess={() => { setEditing(null); load() }} />}
+      {pagedData && pagedData.totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={pagedData.totalPages}
+          totalElements={pagedData.totalElements}
+          pageSize={pagedData.pageSize}
+          onPageChange={setCurrentPage}
+          isLoading={isLoading}
+        />
+      )}
+
+      {showAdd && <AddProductModal onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); setVersion(v => v + 1) }} />}
+      {editing && <AddProductModal product={editing} onClose={() => setEditing(null)} onSuccess={() => { setEditing(null); setVersion(v => v + 1) }} />}
       <ConfirmModal
         open={!!pendingDelete}
         onClose={() => setPendingDelete(null)}
