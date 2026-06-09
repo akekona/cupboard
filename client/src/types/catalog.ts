@@ -17,11 +17,13 @@ export interface Product {
   reorderThreshold: number
   isLowStock: boolean
   deletedAt?: string
+  createdAt?: string
   suppliers: ProductSupplierInfo[]
 }
 
 export interface ProductSupplierInfo {
   id: number
+  supplierId: number
   supplierName: string
   costPrice: number
   currency: CurrencyCode

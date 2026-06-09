@@ -136,6 +136,7 @@ public class ProductService {
         List<ProductSupplierInfo> supplierInfos = p.getProductSuppliers().stream()
                 .map(ps -> new ProductSupplierInfo(
                         ps.getId(),
+                        ps.getSupplier().getId(),
                         ps.getSupplier().getName(),
                         ps.getCostPrice(),
                         ps.getCurrency(),
@@ -148,7 +149,8 @@ public class ProductService {
                 p.getCategory(), p.getUnitPrice(), p.getCurrency(), p.getUnit(),
                 p.getStockQuantity(), p.getReorderThreshold(),
                 p.getStockQuantity() <= p.getReorderThreshold(),
-                supplierInfos
+                supplierInfos,
+                p.getCreatedAt()
         );
     }
 }

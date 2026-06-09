@@ -2,6 +2,7 @@ package com.cupboard.api.dto.product;
 
 import com.cupboard.api.enums.Currency;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record ProductResponse(
@@ -16,5 +17,6 @@ public record ProductResponse(
         int stockQuantity,
         int reorderThreshold,
         boolean isLowStock,
-        List<ProductSupplierInfo> suppliers
+        List<ProductSupplierInfo> suppliers,
+        LocalDateTime createdAt
 ) {}
