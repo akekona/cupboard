@@ -24,6 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -57,11 +58,12 @@ public class InvoiceService {
     public InvoiceStatsResponse getInvoiceStats() {
         LocalDateTime startOfMonth = LocalDateTime.now()
                 .withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDate today = LocalDate.now();
         return new InvoiceStatsResponse(
                 invoiceRepository.getTotalOutstanding(),
-                invoiceRepository.getTotalOverdue(),
+                invoiceRepository.getTotalOverdue(today),
                 invoiceRepository.getTotalPaidSince(startOfMonth),
-                invoiceRepository.countOverdue(),
+                invoiceRepository.countOverdue(today),
                 invoiceRepository.countOutstanding()
         );
     }
