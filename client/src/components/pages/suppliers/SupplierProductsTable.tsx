@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Star, Loader2 } from 'lucide-react'
+import Link from 'next/link'
 import { setProductSupplierPreferred } from '@/lib/api/catalog'
 import { formatCurrency } from '@/lib/currency'
 import { ScrollableTable } from '@/components/common/ScrollableTable'
@@ -15,6 +17,7 @@ interface Props {
 }
 
 export function SupplierProductsTable({ products: initialProducts, isAdmin }: Props) {
+  const router = useRouter()
   const [products, setProducts] = useState(initialProducts)
   const [loadingIds, setLoadingIds] = useState<Set<number>>(new Set())
   const [error, setError] = useState<string | null>(null)
@@ -56,8 +59,20 @@ export function SupplierProductsTable({ products: initialProducts, isAdmin }: Pr
           </thead>
           <tbody className="divide-y divide-gray-50">
             {products.map(p => (
-              <tr key={p.id} className="hover:bg-gray-50/50">
-                <td className="px-5 py-3 font-medium text-gray-900">{p.productName}</td>
+              <tr
+                key={p.id}
+                onClick={() => router.push(`/dashboard/products/${p.productId}`)}
+                className="hover:bg-gray-50/50 cursor-pointer"
+              >
+                <td className="px-5 py-3 font-medium">
+                  <Link
+                    href={`/dashboard/products/${p.productId}`}
+                    onClick={e => e.stopPropagation()}
+                    className="text-[#3B6D11] hover:underline"
+                  >
+                    {p.productName}
+                  </Link>
+                </td>
                 <td className="px-5 py-3 font-mono text-xs text-gray-400">{p.sku}</td>
                 <td className="px-5 py-3 text-gray-700">{formatCurrency(p.costPrice, p.currency)}</td>
                 <td className="px-5 py-3 text-gray-600">{p.leadTimeDays} day{p.leadTimeDays !== 1 ? 's' : ''}</td>
@@ -66,7 +81,7 @@ export function SupplierProductsTable({ products: initialProducts, isAdmin }: Pr
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
-                          onClick={() => handleToggle(p)}
+                          onClick={e => { e.stopPropagation(); handleToggle(p) }}
                           disabled={loadingIds.has(p.id)}
                           className="flex items-center gap-1.5 text-sm transition-colors disabled:opacity-50"
                         >

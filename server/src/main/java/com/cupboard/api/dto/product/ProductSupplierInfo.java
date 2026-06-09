@@ -4,6 +4,7 @@ import com.cupboard.api.enums.Currency;
 
 public record ProductSupplierInfo(
         Long id,
+        Long supplierId,
         String supplierName,
         Long costPrice,
         Currency currency,
