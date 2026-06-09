@@ -135,7 +135,7 @@ class OrderControllerTest {
     @Test
     void getAllOrders_searchByClientName_returnsMatchingOrders() throws Exception {
         // "Blue Bottle Kailua" is client 1 — has 2 seed orders
-        String body = mockMvc.perform(get("/api/orders?search=blue")
+        String body = mockMvc.perform(get("/api/orders?clientSearch=blue")
                         .header("Authorization", "Bearer " + adminToken()))
                 .andReturn().getResponse().getContentAsString();
 
@@ -144,6 +144,116 @@ class OrderControllerTest {
         for (JsonNode o : content) {
             assertThat(o.get("clientName").asText().toLowerCase()).contains("blue");
         }
+    }
+
+    @Test
+    void getAllOrders_searchByOrderNumber_returnsMatchingOrders() throws Exception {
+        String body = mockMvc.perform(get("/api/orders?orderNumber=1")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(1);
+        boolean foundOrder1 = false;
+        for (JsonNode o : content) {
+            assertThat(String.valueOf(o.get("id").asLong())).contains("1");
+            if (o.get("id").asLong() == 1L) foundOrder1 = true;
+        }
+        assertThat(foundOrder1).isTrue();
+    }
+
+    @Test
+    void getAllOrders_filterByCreatedById_returnsOnlyThatUsersOrders() throws Exception {
+        // user 1 (ashley) created orders 1, 3, 5 in seed data
+        String body = mockMvc.perform(get("/api/orders?createdById=1")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode data = om.readTree(body).get("data");
+        JsonNode content = data.get("content");
+        assertThat(data.get("totalElements").asLong()).isGreaterThanOrEqualTo(3);
+        for (JsonNode o : content) {
+            assertThat(o.get("createdByName").asText().toLowerCase()).contains("ashley");
+        }
+    }
+
+    @Test
+    void getAllOrders_sortByCreatedAtDesc_mostRecentFirst() throws Exception {
+        // Default sort is createdAt desc — order 4 (2026-05-28) should be first
+        String body = mockMvc.perform(get("/api/orders?sortBy=createdAt&sortDir=desc")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(2);
+        String first = content.get(0).get("createdAt").asText();
+        String second = content.get(1).get("createdAt").asText();
+        assertThat(first.compareTo(second)).isGreaterThanOrEqualTo(0);
+    }
+
+    @Test
+    void getAllOrders_sortByCreatedAtAsc_earliestFirst() throws Exception {
+        // order 1 (2026-01-15) should be first
+        String body = mockMvc.perform(get("/api/orders?sortBy=createdAt&sortDir=asc")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(2);
+        String first = content.get(0).get("createdAt").asText();
+        String second = content.get(1).get("createdAt").asText();
+        assertThat(first.compareTo(second)).isLessThanOrEqualTo(0);
+        // order 1 has the earliest createdAt in seed data
+        assertThat(content.get(0).get("id").asLong()).isEqualTo(1L);
+    }
+
+    @Test
+    void getAllOrders_sortByNeedByAsc_nullNeedByLast() throws Exception {
+        // seed order 4 has null needBy — must appear last
+        String body = mockMvc.perform(get("/api/orders?sortBy=needBy&sortDir=asc")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(4);
+        // First result should have the earliest needBy (order 1: 2026-01-18)
+        assertThat(content.get(0).get("id").asLong()).isEqualTo(1L);
+        // Last result should have null needBy (order 4)
+        JsonNode last = content.get(content.size() - 1);
+        assertThat(last.get("needBy").isNull()).isTrue();
+    }
+
+    @Test
+    void getAllOrders_sortByNeedByDesc_nullNeedByStillLast() throws Exception {
+        // null needBy must be last regardless of sort direction
+        String body = mockMvc.perform(get("/api/orders?sortBy=needBy&sortDir=desc")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(4);
+        // First result should have the latest needBy (order 5: 2026-04-10)
+        assertThat(content.get(0).get("id").asLong()).isEqualTo(5L);
+        // Last result should have null needBy (order 4)
+        JsonNode last = content.get(content.size() - 1);
+        assertThat(last.get("needBy").isNull()).isTrue();
+    }
+
+    @Test
+    void getAllOrders_statusFilterWithSortByNeedBy_combinedBehavior() throws Exception {
+        // FULFILLED orders: 1 (needBy=2026-01-18) and 5 (needBy=2026-04-10)
+        // Sorted needBy ASC → order 1 first, order 5 last
+        String body = mockMvc.perform(get("/api/orders?status=FULFILLED&sortBy=needBy&sortDir=asc")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode content = om.readTree(body).get("data").get("content");
+        assertThat(content.size()).isGreaterThanOrEqualTo(2);
+        for (JsonNode o : content) {
+            assertThat(o.get("status").asText()).isEqualTo("FULFILLED");
+        }
+        assertThat(content.get(0).get("id").asLong()).isEqualTo(1L);
+        assertThat(content.get(1).get("id").asLong()).isEqualTo(5L);
     }
 
     @Test

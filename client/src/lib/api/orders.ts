@@ -23,7 +23,10 @@ export function getOrders(params?: {
   clientId?: number
   status?: string
   createdById?: number
-  search?: string
+  clientSearch?: string
+  orderNumber?: string
+  sortBy?: 'createdAt' | 'needBy'
+  sortDir?: 'asc' | 'desc'
   page?: number
   size?: number
 }): Promise<PagedResponse<OrderSummary>> {
@@ -31,7 +34,10 @@ export function getOrders(params?: {
   if (params?.clientId) query.set('clientId', String(params.clientId))
   if (params?.status) query.set('status', params.status)
   if (params?.createdById) query.set('createdById', String(params.createdById))
-  if (params?.search) query.set('search', params.search)
+  if (params?.clientSearch) query.set('clientSearch', params.clientSearch)
+  if (params?.orderNumber) query.set('orderNumber', params.orderNumber)
+  if (params?.sortBy) query.set('sortBy', params.sortBy)
+  if (params?.sortDir) query.set('sortDir', params.sortDir)
   query.set('page', String(params?.page ?? 0))
   query.set('size', String(params?.size ?? 50))
   const qs = query.toString()

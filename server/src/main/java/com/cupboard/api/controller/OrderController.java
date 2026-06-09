@@ -31,10 +31,16 @@ public class OrderController {
             @RequestParam(required = false) Long clientId,
             @RequestParam(required = false) OrderStatus status,
             @RequestParam(required = false) Long createdById,
-            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String clientSearch,
+            @RequestParam(required = false) String orderNumber,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        return ApiResponse.ok(orderService.getOrdersPaginated(clientId, status, createdById, search, page, size));
+        if (!List.of("createdAt", "needBy").contains(sortBy)) sortBy = "createdAt";
+        if (!List.of("asc", "desc").contains(sortDir)) sortDir = "desc";
+        return ApiResponse.ok(orderService.getOrdersPaginated(
+                clientId, status, createdById, clientSearch, orderNumber, sortBy, sortDir, page, size));
     }
 
     @GetMapping("/{id}")

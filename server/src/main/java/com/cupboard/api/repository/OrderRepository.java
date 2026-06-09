@@ -26,13 +26,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "(:clientId IS NULL OR o.client.id = :clientId) AND " +
             "(:status IS NULL OR o.status = :status) AND " +
             "(:createdById IS NULL OR o.createdBy.id = :createdById) AND " +
-            "(:searchLike IS NULL OR LOWER(o.client.name) LIKE :searchLike) " +
-            "ORDER BY o.createdAt DESC")
-    Page<Order> findAllWithFilters(
+            "(:clientSearch IS NULL OR LOWER(o.client.name) LIKE :clientSearch) AND " +
+            "(:orderNumber IS NULL OR CAST(o.id AS string) LIKE :orderNumber)")
+    Page<Order> findAllFiltered(
             @Param("clientId") Long clientId,
             @Param("status") OrderStatus status,
             @Param("createdById") Long createdById,
-            @Param("searchLike") String searchLike,
+            @Param("clientSearch") String clientSearch,
+            @Param("orderNumber") String orderNumber,
             Pageable pageable
     );
 

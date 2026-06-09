@@ -31,7 +31,7 @@ export default function OrdersPage() {
     setIsLoading(true)
     getOrders({
       status: statusFilter || undefined,
-      search: activeSearch || undefined,
+      clientSearch: activeSearch || undefined,
       page: currentPage,
       size: PAGE_SIZE,
     })
