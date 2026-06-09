@@ -1,122 +1,465 @@
--- ── Roles (IDs 1–7) ──────────────────────────────────────────────────────────
+-- ── Roles ─────────────────────────────────────────────────────────────────────
 INSERT INTO roles (name, description) VALUES
-  ('ADMIN',      'Full platform access and user management'),
-  ('STAFF',      'General operations and order management'),
-  ('ACCOUNTING', 'Invoices, payments and financial reporting'),
-  ('DRIVER',     'Delivery and fulfillment tasks'),
-  ('SALES',      'Client management and sales pipeline'),
-  ('INVENTORY',  'Product catalog and stock management'),
-  ('DEVELOPER',  'System configuration and technical access');
+  ('ADMIN',      'Full system access'),
+  ('STAFF',      'Day-to-day operations'),
+  ('ACCOUNTING', 'Read-only financial access'),
+  ('DRIVER',     'Delivery status updates'),
+  ('SALES',      'Client and order management'),
+  ('INVENTORY',  'Product and stock management'),
+  ('DEVELOPER',  'Full access, technical role');
 
--- ── Users (IDs 1–3) ───────────────────────────────────────────────────────────
+-- ── Users ─────────────────────────────────────────────────────────────────────
 -- password_hash = bcrypt('password123', cost=10)
-INSERT INTO users (email, first_name, last_name, password_hash, is_active, created_at, updated_at) VALUES
-  ('ashley@cupboard.io', 'Ashley', 'Kekona', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lh1y', true, '2026-01-01 09:00:00', '2026-01-01 09:00:00'),
-  ('kai@cupboard.io',    'Kai',    'Mauga',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lh1y', true, '2026-01-02 09:00:00', '2026-01-02 09:00:00'),
-  ('jamie@cupboard.io',  'Jamie',  'Lum',    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lh1y', true, '2026-01-03 09:00:00', '2026-01-03 09:00:00');
+INSERT INTO users (email, first_name, last_name, password_hash, account_status, created_at, updated_at) VALUES
+  ('ashley@cupboard.test', 'Ashley', 'Kekona', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LPVKKi8dHm6', 'ACTIVE',   NOW() - INTERVAL '180 days', NOW()),
+  ('kai@cupboard.test',    'Kai',    'Mauga',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LPVKKi8dHm6', 'ACTIVE',   NOW() - INTERVAL '150 days', NOW()),
+  ('jamie@cupboard.test',  'Jamie',  'Lum',    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LPVKKi8dHm6', 'ACTIVE',   NOW() - INTERVAL '120 days', NOW()),
+  ('tiana@cupboard.test',  'Tiana',  'Pua',    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LPVKKi8dHm6', 'INACTIVE', NOW() - INTERVAL '90 days',  NOW());
 
--- ── User Auth Providers ───────────────────────────────────────────────────────
-INSERT INTO user_auth_providers (user_id, provider, provider_id) VALUES
-  (1, 'LOCAL', NULL),
-  (2, 'LOCAL', NULL),
-  (3, 'LOCAL', NULL);
+INSERT INTO user_auth_providers (user_id, provider, provider_id, created_at) VALUES
+  (1, 'LOCAL', NULL, NOW() - INTERVAL '180 days'),
+  (2, 'LOCAL', NULL, NOW() - INTERVAL '150 days'),
+  (3, 'LOCAL', NULL, NOW() - INTERVAL '120 days'),
+  (4, 'LOCAL', NULL, NOW() - INTERVAL '90 days');
 
--- ── User Roles ────────────────────────────────────────────────────────────────
--- Ashley (1): ADMIN (1) + DEVELOPER (7)
--- Kai (2):    STAFF (2)
--- Jamie (3):  STAFF (2) + ACCOUNTING (3)
+-- Ashley: ADMIN + DEVELOPER  Kai: STAFF  Jamie: STAFF + ACCOUNTING  Tiana: STAFF
 INSERT INTO user_roles (user_id, role_id) VALUES
-  (1, 1),
-  (1, 7),
+  (1, 1), (1, 7),
   (2, 2),
-  (3, 2),
-  (3, 3);
+  (3, 2), (3, 3),
+  (4, 2);
 
--- ── Suppliers (IDs 1–4) ───────────────────────────────────────────────────────
-INSERT INTO suppliers (name, contact_name, contact_email, contact_phone, address, notes) VALUES
-  ('Oahu Roasters',      'Kimo Akana',  'kimo@oahuroasters.com',     '(808) 555-0101', '1234 Kapiolani Blvd, Honolulu, HI 96814', 'Specialty coffee roaster, direct-trade sourcing'),
-  ('Pacific Foods Co.',  'Lena Higa',   'lena@pacificfoods.co',      '(503) 555-0202', '567 Morrison St, Portland, OR 97201',      'Dairy and alternative milk distributor'),
-  ('EcoPack Hawaii',     'Maka Souza',  'maka@ecopackhawaii.com',    '(808) 555-0303', '88 Hamakua Dr, Kailua, HI 96734',          'Sustainable disposables, dishware and furniture'),
-  ('Island Fresh Farms', 'Hana Kahale', 'hana@islandfreshfarms.com', '(808) 555-0404', '320 Kahekili Hwy, Kaneohe, HI 96744',     'Local produce and perishables, farm-to-cafe');
+-- ── Suppliers ─────────────────────────────────────────────────────────────────
+INSERT INTO suppliers (name, contact_name, contact_email, contact_phone, address, notes, created_at, updated_at) VALUES
+  ('Oahu Roasters',      'Kimo Akana',  'kimo@oahuroasters.test',     '(808) 555-0101', '1234 Kapiolani Blvd, Honolulu, HI 96814', 'Specialty coffee roaster, direct-trade sourcing',     NOW() - INTERVAL '180 days', NOW()),
+  ('Pacific Foods Co.',  'Lena Chen',   'lena@pacificfoods.test',     '(503) 555-0192', '5678 Powell Blvd, Portland, OR 97201',    'Dairy and alternative milk distributor',              NOW() - INTERVAL '180 days', NOW()),
+  ('EcoPack Hawaii',     'Maka Santos', 'maka@ecopackhawaii.test',    '(808) 555-0134', '910 Auahi St, Kailua, HI 96734',          'Eco-certified disposables and dishware',              NOW() - INTERVAL '180 days', NOW()),
+  ('Island Fresh Farms', 'Hana Akagi',  'hana@islandfreshfarms.test', '(808) 555-0177', '222 Kamehameha Hwy, Kaneohe, HI 96744',   'Locally sourced food and perishables',                NOW() - INTERVAL '180 days', NOW()),
+  ('Kona Coffee Co.',    'Roy Akana',   'roy@konacoffeeco.test',      '(808) 555-0199', '100 Alii Dr, Kailua-Kona, HI 96740',     'Estate-grown Kona coffee, alternate coffee supplier', NOW() - INTERVAL '160 days', NOW());
 
--- ── Products (IDs 1–12) ───────────────────────────────────────────────────────
--- unit_price in cents (USD). Low stock: Ethiopian (qty 14, threshold 50). OOS: espresso machine.
-INSERT INTO products (sku, name, description, category, unit_price, unit, stock_quantity, reorder_threshold) VALUES
-  ('COF-ETH-1KG',   'Ethiopian Single Origin 1kg',    'Light roast, floral and citrus notes, Yirgacheffe region',   'COFFEE',      2800, 'bag',      14,  50),
-  ('COF-COL-1KG',   'Colombia Blend 1kg',              'Medium roast, caramel and nutty profile',                    'COFFEE',      2400, 'bag',     120,  30),
-  ('DAI-OAT-C12',   'Oat Milk case/12',                'Barista-grade oat milk, 1L cartons',                         'DAIRY',       4200, 'case',     48,  12),
-  ('DAI-WHL-C12',   'Whole Milk case/12',              'Full-cream fresh whole milk, 1L cartons',                    'DAIRY',       3600, 'case',     60,  15),
-  ('FOOD-EGG-F30',  'Free Range Eggs flat/30',         'Locally sourced free-range eggs, Grade A',                   'FOOD',        1400, 'flat',     35,  10),
-  ('FOOD-PMX-5KG',  'Pastry Mix 5kg',                  'All-purpose cafe pastry and muffin mix',                     'FOOD',        2200, 'bag',      28,   8),
-  ('DISP-CUP-8S',   'Paper Cups 8oz sleeve/50',        'Single-wall hot cups, eco-certified',                        'DISPOSABLES',  950, 'sleeve',  200,  50),
-  ('DISP-LID-8S',   'Lids 8oz sleeve/50',              'Sip-through lids to fit 8oz hot cups',                       'DISPOSABLES',  600, 'sleeve',  180,  50),
-  ('DISH-MUG-CER',  'Ceramic Mugs',                    'Classic 8oz ceramic mugs, dishwasher safe',                  'DISHWARE',     800, 'unit',     75,  20),
-  ('EQUIP-ESP-BDB', 'Espresso Machine Breville Dual',  'Breville Dual Boiler, commercial-grade espresso machine',    'EQUIPMENT', 120000, 'unit',      0,   2),
-  ('FURN-TBL-RND',  'Cafe Table Round',                'Round cafe table, 75cm diameter, powder-coated steel base',  'FURNITURE',  18000, 'unit',      8,   3),
-  ('CLN-APC-C6',    'All-Purpose Cleaner case/6',      'Food-safe all-purpose cleaning spray, 750ml bottles',        'CLEANING',    2400, 'case',     30,  10);
+-- ── Products (IDs 1-60) ───────────────────────────────────────────────────────
+-- unit_price in cents (USD)
+INSERT INTO products (sku, name, category, unit_price, currency, unit, stock_quantity, reorder_threshold, created_at, updated_at) VALUES
+  -- COFFEE (1-12)
+  ('COF-ETH-1KG',  'Ethiopian Single Origin 1kg', 'COFFEE',      2800, 'USD', 'bag',    14,  50, NOW() - INTERVAL '180 days', NOW()),
+  ('COF-COL-1KG',  'Colombia Blend 1kg',          'COFFEE',      2400, 'USD', 'bag',   120,  30, NOW() - INTERVAL '180 days', NOW()),
+  ('COF-BRA-1KG',  'Brazil Santos 1kg',           'COFFEE',      2200, 'USD', 'bag',    85,  30, NOW() - INTERVAL '180 days', NOW()),
+  ('COF-KEN-1KG',  'Kenya AA 1kg',                'COFFEE',      3200, 'USD', 'bag',    45,  20, NOW() - INTERVAL '180 days', NOW()),
+  ('COF-GUA-1KG',  'Guatemala Antigua 1kg',       'COFFEE',      2600, 'USD', 'bag',    60,  25, NOW() - INTERVAL '180 days', NOW()),
+  ('COF-KON-250G', 'Kona Blend 250g',             'COFFEE',      1800, 'USD', 'bag',    90,  30, NOW() - INTERVAL '180 days', NOW()),
+  ('COF-HSE-1KG',  'House Blend 1kg',             'COFFEE',      2000, 'USD', 'bag',   200,  50, NOW() - INTERVAL '180 days', NOW()),
+  ('COF-DEC-1KG',  'Decaf Colombia 1kg',          'COFFEE',      2600, 'USD', 'bag',    35,  20, NOW() - INTERVAL '180 days', NOW()),
+  ('COF-CBD-1L',   'Cold Brew Concentrate 1L',    'COFFEE',      1500, 'USD', 'bottle', 55,  20, NOW() - INTERVAL '180 days', NOW()),
+  ('COF-ESP-1KG',  'Espresso Blend 1kg',          'COFFEE',      2400, 'USD', 'bag',   110,  40, NOW() - INTERVAL '180 days', NOW()),
+  ('COF-POD-24',   'Single Serve Pods box/24',    'COFFEE',      1800, 'USD', 'box',    75,  30, NOW() - INTERVAL '180 days', NOW()),
+  ('COF-MAT-500G', 'Matcha Powder 500g',          'COFFEE',      3500, 'USD', 'bag',     0,  15, NOW() - INTERVAL '180 days', NOW()),
+  -- DAIRY (13-20)
+  ('DAI-OAT-C12',  'Oat Milk case/12',            'DAIRY',       4200, 'USD', 'case',   48,  12, NOW() - INTERVAL '180 days', NOW()),
+  ('DAI-WHL-C12',  'Whole Milk case/12',          'DAIRY',       3600, 'USD', 'case',   60,  15, NOW() - INTERVAL '180 days', NOW()),
+  ('DAI-SKM-C12',  'Skim Milk case/12',           'DAIRY',       3400, 'USD', 'case',   40,  12, NOW() - INTERVAL '180 days', NOW()),
+  ('DAI-ALM-C12',  'Almond Milk case/12',         'DAIRY',       4800, 'USD', 'case',   36,  10, NOW() - INTERVAL '180 days', NOW()),
+  ('DAI-SOY-C12',  'Soy Milk case/12',            'DAIRY',       4000, 'USD', 'case',   24,  10, NOW() - INTERVAL '180 days', NOW()),
+  ('DAI-COC-C12',  'Coconut Milk case/12',        'DAIRY',       4400, 'USD', 'case',   18,   8, NOW() - INTERVAL '180 days', NOW()),
+  ('DAI-CRM-C12',  'Heavy Cream case/12',         'DAIRY',       5200, 'USD', 'case',   30,  10, NOW() - INTERVAL '180 days', NOW()),
+  ('DAI-CON-C24',  'Condensed Milk case/24',      'DAIRY',       3800, 'USD', 'case',   45,  12, NOW() - INTERVAL '180 days', NOW()),
+  -- FOOD (21-28)
+  ('FOOD-EGG-F30', 'Free Range Eggs flat/30',     'FOOD',        1400, 'USD', 'flat',   35,  10, NOW() - INTERVAL '180 days', NOW()),
+  ('FOOD-PMX-5KG', 'Pastry Mix 5kg',              'FOOD',        2200, 'USD', 'bag',    28,   8, NOW() - INTERVAL '180 days', NOW()),
+  ('FOOD-GRN-5KG', 'Granola Bulk 5kg',            'FOOD',        3200, 'USD', 'bag',    20,   8, NOW() - INTERVAL '180 days', NOW()),
+  ('FOOD-BUT-C12', 'Butter Unsalted case/12',     'FOOD',        4800, 'USD', 'case',   15,   6, NOW() - INTERVAL '180 days', NOW()),
+  ('FOOD-HON-5KG', 'Honey Raw 5kg',               'FOOD',        4200, 'USD', 'bag',    12,   5, NOW() - INTERVAL '180 days', NOW()),
+  ('FOOD-VAN-1L',  'Vanilla Extract 1L',          'FOOD',        2800, 'USD', 'bottle', 22,   8, NOW() - INTERVAL '180 days', NOW()),
+  ('FOOD-SUG-25K', 'Cane Sugar 25kg',             'FOOD',        1800, 'USD', 'bag',    40,  10, NOW() - INTERVAL '180 days', NOW()),
+  ('FOOD-CHA-1L',  'Chai Concentrate 1L',         'FOOD',        1600, 'USD', 'bottle', 30,  10, NOW() - INTERVAL '180 days', NOW()),
+  -- DISPOSABLES (29-38)
+  ('DISP-CUP-8S',  'Paper Cups 8oz sleeve/50',    'DISPOSABLES',  950, 'USD', 'sleeve', 200,  50, NOW() - INTERVAL '180 days', NOW()),
+  ('DISP-CUP-12S', 'Paper Cups 12oz sleeve/50',   'DISPOSABLES', 1100, 'USD', 'sleeve', 180,  50, NOW() - INTERVAL '180 days', NOW()),
+  ('DISP-CUP-16S', 'Paper Cups 16oz sleeve/50',   'DISPOSABLES', 1250, 'USD', 'sleeve', 160,  50, NOW() - INTERVAL '180 days', NOW()),
+  ('DISP-LID-8S',  'Lids 8oz sleeve/50',          'DISPOSABLES',  600, 'USD', 'sleeve', 180,  50, NOW() - INTERVAL '180 days', NOW()),
+  ('DISP-LID-12S', 'Lids 12oz sleeve/50',         'DISPOSABLES',  700, 'USD', 'sleeve', 160,  50, NOW() - INTERVAL '180 days', NOW()),
+  ('DISP-NAP-500', 'Napkins pack/500',             'DISPOSABLES',  450, 'USD', 'pack',   300,  80, NOW() - INTERVAL '180 days', NOW()),
+  ('DISP-STR-250', 'Straws paper pack/250',        'DISPOSABLES',  380, 'USD', 'pack',   250,  60, NOW() - INTERVAL '180 days', NOW()),
+  ('DISP-BAG-100', 'Takeout Bags pack/100',        'DISPOSABLES',  520, 'USD', 'pack',   150,  40, NOW() - INTERVAL '180 days', NOW()),
+  ('DISP-SLV-100', 'Coffee Sleeves pack/100',      'DISPOSABLES',  480, 'USD', 'pack',   200,  50, NOW() - INTERVAL '180 days', NOW()),
+  ('DISP-STK-500', 'Stir Sticks pack/500',         'DISPOSABLES',  320, 'USD', 'pack',   400, 100, NOW() - INTERVAL '180 days', NOW()),
+  -- DISHWARE (39-44)
+  ('DISH-MUG-CER', 'Ceramic Mugs each',           'DISHWARE',     800, 'USD', 'each',    75,  20, NOW() - INTERVAL '180 days', NOW()),
+  ('DISH-GLS-8OZ', 'Glass Cups 8oz each',         'DISHWARE',     650, 'USD', 'each',    60,  20, NOW() - INTERVAL '180 days', NOW()),
+  ('DISH-ESP-S6',  'Espresso Cups set/6',         'DISHWARE',    2400, 'USD', 'set',     30,  10, NOW() - INTERVAL '180 days', NOW()),
+  ('DISH-SAU-CER', 'Saucers each',                'DISHWARE',     400, 'USD', 'each',    80,  20, NOW() - INTERVAL '180 days', NOW()),
+  ('DISH-PLT-10',  'Plates 10in each',            'DISHWARE',     900, 'USD', 'each',    50,  15, NOW() - INTERVAL '180 days', NOW()),
+  ('DISH-TRY-SRV', 'Serving Trays each',          'DISHWARE',    1800, 'USD', 'each',    20,   8, NOW() - INTERVAL '180 days', NOW()),
+  -- EQUIPMENT (45-50)
+  ('EQUIP-ESP-BDB','Espresso Machine Breville Dual','EQUIPMENT', 120000,'USD', 'each',    0,   2, NOW() - INTERVAL '180 days', NOW()),
+  ('EQUIP-GRD-BAR','Commercial Grinder Baratza',  'EQUIPMENT',  65000, 'USD', 'each',    3,   2, NOW() - INTERVAL '180 days', NOW()),
+  ('EQUIP-FRT-HND','Milk Frother Handheld',       'EQUIPMENT',   2500, 'USD', 'each',   25,   8, NOW() - INTERVAL '180 days', NOW()),
+  ('EQUIP-POV-KIT','Pour Over Kit',               'EQUIPMENT',   8500, 'USD', 'each',   15,   5, NOW() - INTERVAL '180 days', NOW()),
+  ('EQUIP-CBD-TWR','Cold Brew Tower',             'EQUIPMENT',  45000, 'USD', 'each',    2,   1, NOW() - INTERVAL '180 days', NOW()),
+  ('EQUIP-WTR-FLT','Water Filter System',         'EQUIPMENT',  28000, 'USD', 'each',    4,   2, NOW() - INTERVAL '180 days', NOW()),
+  -- FURNITURE (51-54)
+  ('FURN-TBL-RND', 'Cafe Table Round',            'FURNITURE',  18000, 'USD', 'each',   12,   4, NOW() - INTERVAL '180 days', NOW()),
+  ('FURN-STL-BAR', 'Bar Stool each',              'FURNITURE',  12000, 'USD', 'each',   20,   6, NOW() - INTERVAL '180 days', NOW()),
+  ('FURN-BNC-4FT', 'Bench Seat 4ft',              'FURNITURE',  24000, 'USD', 'each',    6,   2, NOW() - INTERVAL '180 days', NOW()),
+  ('FURN-MNU-AFR', 'Menu Board A-Frame',          'FURNITURE',   8500, 'USD', 'each',   10,   4, NOW() - INTERVAL '180 days', NOW()),
+  -- CLEANING (55-60)
+  ('CLN-APC-C6',   'All-Purpose Cleaner case/6',  'CLEANING',    2400, 'USD', 'case',   30,   8, NOW() - INTERVAL '180 days', NOW()),
+  ('CLN-DSH-C6',   'Dish Soap case/6',            'CLEANING',    1800, 'USD', 'case',   25,   8, NOW() - INTERVAL '180 days', NOW()),
+  ('CLN-SAN-C12',  'Sanitizer Spray case/12',     'CLEANING',    3200, 'USD', 'case',   20,   6, NOW() - INTERVAL '180 days', NOW()),
+  ('CLN-CMC-P10',  'Coffee Machine Cleaner pack/10','CLEANING',  1600, 'USD', 'pack',   18,   6, NOW() - INTERVAL '180 days', NOW()),
+  ('CLN-DSC-P6',   'Descaling Solution pack/6',   'CLEANING',    1400, 'USD', 'pack',   15,   5, NOW() - INTERVAL '180 days', NOW()),
+  ('CLN-MFC-P10',  'Microfiber Cloths pack/10',   'CLEANING',     800, 'USD', 'pack',   40,  12, NOW() - INTERVAL '180 days', NOW());
 
 -- ── Product Suppliers ─────────────────────────────────────────────────────────
--- Colombia blend (2) has two suppliers to demonstrate multi-supplier support:
---   Oahu Roasters (preferred) and Pacific Foods Co. (non-preferred, longer lead time)
-INSERT INTO product_suppliers (product_id, supplier_id, supplier_sku, cost_price, lead_time_days, is_preferred) VALUES
-  (1,  1, 'OR-ETH-1KG',    2100,  3, true),
-  (2,  1, 'OR-COL-1KG',    1800,  3, true),
-  (2,  2, 'PF-COL-1KG',    1950,  5, false),
-  (3,  2, 'PF-OAT-C12',    3200,  2, true),
-  (4,  2, 'PF-WHL-C12',    2700,  2, true),
-  (5,  4, 'IFF-EGG-F30',   1000,  1, true),
-  (6,  4, 'IFF-PMX-5KG',   1600,  2, true),
-  (7,  3, 'EP-CUP-8S',      700,  3, true),
-  (8,  3, 'EP-LID-8S',      450,  3, true),
-  (9,  3, 'EP-MUG-CER',     600,  5, true),
-  (10, 1, 'OR-ESP-BDB',   95000, 14, true),
-  (11, 3, 'EP-TBL-RND',   14000, 10, true),
-  (12, 3, 'EP-APC-C6',     1800,  3, true);
+INSERT INTO product_suppliers (product_id, supplier_id, cost_price, currency, lead_time_days, is_preferred) VALUES
+  -- Coffee → Oahu Roasters (1), cost = unit_price × 0.75
+  (1,  1, 2100, 'USD',  3, true),
+  (2,  1, 1800, 'USD',  3, true),
+  (3,  1, 1650, 'USD',  3, true),
+  (4,  1, 2400, 'USD',  3, true),
+  (5,  1, 1950, 'USD',  3, true),
+  (6,  1, 1350, 'USD',  3, true),
+  (7,  1, 1500, 'USD',  3, true),
+  (8,  1, 1950, 'USD',  3, true),
+  (9,  1, 1125, 'USD',  3, true),
+  (10, 1, 1800, 'USD',  3, true),
+  (11, 1, 1350, 'USD',  3, true),
+  (12, 1, 2625, 'USD',  3, true),
+  -- Kona Blend + Espresso also → Kona Coffee Co (5), cost = unit_price × 0.78
+  (6,  5, 1404, 'USD',  1, false),
+  (10, 5, 1872, 'USD',  1, false),
+  -- Dairy → Pacific Foods Co (2), cost = unit_price × 0.70
+  (13, 2, 2940, 'USD',  5, true),
+  (14, 2, 2520, 'USD',  5, true),
+  (15, 2, 2380, 'USD',  5, true),
+  (16, 2, 3360, 'USD',  5, true),
+  (17, 2, 2800, 'USD',  5, true),
+  (18, 2, 3080, 'USD',  5, true),
+  (19, 2, 3640, 'USD',  5, true),
+  (20, 2, 2660, 'USD',  5, true),
+  -- Food → Island Fresh Farms (4), cost = unit_price × 0.72
+  (21, 4, 1008, 'USD',  2, true),
+  (22, 4, 1584, 'USD',  2, true),
+  (23, 4, 2304, 'USD',  2, true),
+  (24, 4, 3456, 'USD',  2, true),
+  (25, 4, 3024, 'USD',  2, true),
+  (26, 4, 2016, 'USD',  2, true),
+  (27, 4, 1296, 'USD',  2, true),
+  (28, 4, 1152, 'USD',  2, true),
+  -- Disposables → EcoPack Hawaii (3), cost = unit_price × 0.68
+  (29, 3,  646, 'USD',  2, true),
+  (30, 3,  748, 'USD',  2, true),
+  (31, 3,  850, 'USD',  2, true),
+  (32, 3,  408, 'USD',  2, true),
+  (33, 3,  476, 'USD',  2, true),
+  (34, 3,  306, 'USD',  2, true),
+  (35, 3,  258, 'USD',  2, true),
+  (36, 3,  354, 'USD',  2, true),
+  (37, 3,  326, 'USD',  2, true),
+  (38, 3,  218, 'USD',  2, true),
+  -- Dishware → EcoPack Hawaii (3), cost = unit_price × 0.68
+  (39, 3,  544, 'USD',  2, true),
+  (40, 3,  442, 'USD',  2, true),
+  (41, 3, 1632, 'USD',  2, true),
+  (42, 3,  272, 'USD',  2, true),
+  (43, 3,  612, 'USD',  2, true),
+  (44, 3, 1224, 'USD',  2, true),
+  -- Equipment → Oahu Roasters (1) placeholder, cost = unit_price × 0.80
+  (45, 1, 96000, 'USD', 14, true),
+  (46, 1, 52000, 'USD', 14, true),
+  (47, 1,  2000, 'USD', 14, true),
+  (48, 1,  6800, 'USD', 14, true),
+  (49, 1, 36000, 'USD', 14, true),
+  (50, 1, 22400, 'USD', 14, true),
+  -- Furniture → EcoPack Hawaii (3), cost = unit_price × 0.75
+  (51, 3, 13500, 'USD', 10, true),
+  (52, 3,  9000, 'USD', 10, true),
+  (53, 3, 18000, 'USD', 10, true),
+  (54, 3,  6375, 'USD', 10, true),
+  -- Cleaning → EcoPack Hawaii (3), cost = unit_price × 0.65
+  (55, 3, 1560, 'USD',  3, true),
+  (56, 3, 1170, 'USD',  3, true),
+  (57, 3, 2080, 'USD',  3, true),
+  (58, 3, 1040, 'USD',  3, true),
+  (59, 3,  910, 'USD',  3, true),
+  (60, 3,  520, 'USD',  3, true);
 
--- ── Clients (IDs 1–4) ────────────────────────────────────────────────────────
-INSERT INTO clients (name, contact_name, contact_email, contact_phone, address, account_status) VALUES
-  ('Blue Bottle Kailua',     'T. Nakamura', 't.nakamura@bluebottle.com',  '(808) 555-1001', '315 Uluniu St, Kailua, HI 96734',            'ACTIVE'),
-  ('Ritual Coffee Roasters', 'S. Park',     's.park@ritualcoffee.com',    '(415) 555-1002', '1026 Valencia St, San Francisco, CA 94110',  'ACTIVE'),
-  ('Verve Coffee',           'A. Torres',   'a.torres@vervecoffee.com',   '(831) 555-1003', '104 Aptos St, Santa Cruz, CA 95060',         'ACTIVE'),
-  ('Stumptown Honolulu',     'M. Wong',     'm.wong@stumptowncoffee.com', '(808) 555-1004', '1200 Ala Moana Blvd, Honolulu, HI 96814',   'SUSPENDED');
+-- ── Clients ───────────────────────────────────────────────────────────────────
+INSERT INTO clients (name, contact_name, contact_email, contact_phone, address, account_status, created_at, updated_at) VALUES
+  ('Blue Bottle Kailua',     'T. Nakamura', 'tnakamura@bluebottle.test',      '(808) 555-1001', '315 Uluniu St, Kailua, HI 96734',               'ACTIVE',    NOW() - INTERVAL '180 days', NOW()),
+  ('Ritual Coffee Roasters', 'S. Park',     's.park@ritualcoffee.test',       '(808) 555-1002', '1400 Kapiolani Blvd, Honolulu, HI 96814',       'ACTIVE',    NOW() - INTERVAL '160 days', NOW()),
+  ('Verve Coffee',           'A. Torres',   'a.torres@vervecoffee.test',      '(808) 555-1003', '2233 Kalakaua Ave, Honolulu, HI 96815',         'ACTIVE',    NOW() - INTERVAL '150 days', NOW()),
+  ('Stumptown Honolulu',     'M. Wong',     'm.wong@stumptowncoffee.test',    '(808) 555-1004', '1600 Ala Moana Blvd, Honolulu, HI 96814',      'SUSPENDED', NOW() - INTERVAL '140 days', NOW()),
+  ('Cafe Haleiwa',           'K. Rodrigues','k.rodrigues@cafehaleiwa.test',   '(808) 555-1005', '66-145 Kamehameha Hwy, Haleiwa, HI 96712',     'ACTIVE',    NOW() - INTERVAL '120 days', NOW()),
+  ('North Shore Roasters',   'L. Kim',      'l.kim@northshoreroasters.test',  '(808) 555-1006', '59-712 Kamehameha Hwy, Haleiwa, HI 96712',     'ACTIVE',    NOW() - INTERVAL '100 days', NOW()),
+  ('Lanikai Coffee',         'P. Tanaka',   'p.tanaka@lanikaicoffee.test',    '(808) 555-1007', '600 Kailua Rd, Kailua, HI 96734',               'ACTIVE',    NOW() - INTERVAL '80 days',  NOW()),
+  ('Waimanalo Brew',         'J. Santos',   'j.santos@waimanalobrew.test',    '(808) 555-1008', '41-1025 Kalanianaole Hwy, Waimanalo, HI 96795','ACTIVE',    NOW() - INTERVAL '60 days',  NOW());
 
--- ── Orders (IDs 1–5) ─────────────────────────────────────────────────────────
-INSERT INTO orders (client_id, created_by, status, currency, need_by, notes, created_at, updated_at) VALUES
-  (1, 1, 'FULFILLED', 'USD', '2026-01-18', 'Rush order for weekend events',    '2026-01-15 10:00:00', '2026-01-20 14:00:00'),
-  (2, 2, 'SHIPPED',   'USD', '2026-02-25',  NULL,                              '2026-02-20 11:00:00', '2026-02-23 09:00:00'),
-  (3, 1, 'CONFIRMED', 'USD', '2026-03-20', 'Confirm mug qty with client',      '2026-03-10 09:00:00', '2026-03-11 10:00:00'),
-  (1, 2, 'DRAFT',     'USD',  NULL,        'Pending client approval on qty',   '2026-05-28 14:00:00', '2026-05-28 14:00:00'),
-  (3, 1, 'FULFILLED', 'USD', '2026-04-10', 'New equipment installation order', '2026-04-05 08:00:00', '2026-04-12 16:00:00');
+-- ── Orders ────────────────────────────────────────────────────────────────────
+INSERT INTO orders (client_id, created_by, status, currency, need_by, created_at, updated_at) VALUES
+  -- Month 1 (6 months ago): 8 FULFILLED
+  (1, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '161 days')::date, NOW() - INTERVAL '175 days', NOW() - INTERVAL '170 days'),
+  (2, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '159 days')::date, NOW() - INTERVAL '173 days', NOW() - INTERVAL '168 days'),
+  (3, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '157 days')::date, NOW() - INTERVAL '171 days', NOW() - INTERVAL '166 days'),
+  (5, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '155 days')::date, NOW() - INTERVAL '169 days', NOW() - INTERVAL '164 days'),
+  (6, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '153 days')::date, NOW() - INTERVAL '167 days', NOW() - INTERVAL '162 days'),
+  (7, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '151 days')::date, NOW() - INTERVAL '165 days', NOW() - INTERVAL '160 days'),
+  (8, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '149 days')::date, NOW() - INTERVAL '163 days', NOW() - INTERVAL '158 days'),
+  (1, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '147 days')::date, NOW() - INTERVAL '161 days', NOW() - INTERVAL '156 days'),
+  -- Month 2 (5 months ago): 10 FULFILLED
+  (2, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '134 days')::date, NOW() - INTERVAL '148 days', NOW() - INTERVAL '143 days'),
+  (3, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '132 days')::date, NOW() - INTERVAL '146 days', NOW() - INTERVAL '141 days'),
+  (5, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '130 days')::date, NOW() - INTERVAL '144 days', NOW() - INTERVAL '139 days'),
+  (6, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '128 days')::date, NOW() - INTERVAL '142 days', NOW() - INTERVAL '137 days'),
+  (7, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '126 days')::date, NOW() - INTERVAL '140 days', NOW() - INTERVAL '135 days'),
+  (8, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '124 days')::date, NOW() - INTERVAL '138 days', NOW() - INTERVAL '133 days'),
+  (1, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '122 days')::date, NOW() - INTERVAL '136 days', NOW() - INTERVAL '131 days'),
+  (2, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '120 days')::date, NOW() - INTERVAL '134 days', NOW() - INTERVAL '129 days'),
+  (3, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '118 days')::date, NOW() - INTERVAL '132 days', NOW() - INTERVAL '127 days'),
+  (5, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '116 days')::date, NOW() - INTERVAL '130 days', NOW() - INTERVAL '125 days'),
+  -- Month 3 (4 months ago): 12 FULFILLED
+  (6, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '104 days')::date, NOW() - INTERVAL '118 days', NOW() - INTERVAL '113 days'),
+  (7, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '102 days')::date, NOW() - INTERVAL '116 days', NOW() - INTERVAL '111 days'),
+  (8, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '100 days')::date, NOW() - INTERVAL '114 days', NOW() - INTERVAL '109 days'),
+  (1, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '98 days')::date,  NOW() - INTERVAL '112 days', NOW() - INTERVAL '107 days'),
+  (2, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '96 days')::date,  NOW() - INTERVAL '110 days', NOW() - INTERVAL '105 days'),
+  (3, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '94 days')::date,  NOW() - INTERVAL '108 days', NOW() - INTERVAL '103 days'),
+  (5, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '92 days')::date,  NOW() - INTERVAL '106 days', NOW() - INTERVAL '101 days'),
+  (6, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '90 days')::date,  NOW() - INTERVAL '104 days', NOW() - INTERVAL '99 days'),
+  (7, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '88 days')::date,  NOW() - INTERVAL '102 days', NOW() - INTERVAL '97 days'),
+  (8, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '86 days')::date,  NOW() - INTERVAL '100 days', NOW() - INTERVAL '95 days'),
+  (1, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '84 days')::date,  NOW() - INTERVAL '98 days',  NOW() - INTERVAL '93 days'),
+  (2, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '82 days')::date,  NOW() - INTERVAL '96 days',  NOW() - INTERVAL '91 days'),
+  -- Month 4 (3 months ago): 14 FULFILLED (last 2 get OVERDUE invoices)
+  (3, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '74 days')::date,  NOW() - INTERVAL '88 days',  NOW() - INTERVAL '83 days'),
+  (5, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '72 days')::date,  NOW() - INTERVAL '86 days',  NOW() - INTERVAL '81 days'),
+  (6, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '70 days')::date,  NOW() - INTERVAL '84 days',  NOW() - INTERVAL '79 days'),
+  (7, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '68 days')::date,  NOW() - INTERVAL '82 days',  NOW() - INTERVAL '77 days'),
+  (8, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '66 days')::date,  NOW() - INTERVAL '80 days',  NOW() - INTERVAL '75 days'),
+  (1, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '64 days')::date,  NOW() - INTERVAL '78 days',  NOW() - INTERVAL '73 days'),
+  (2, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '62 days')::date,  NOW() - INTERVAL '76 days',  NOW() - INTERVAL '71 days'),
+  (3, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '60 days')::date,  NOW() - INTERVAL '74 days',  NOW() - INTERVAL '69 days'),
+  (5, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '58 days')::date,  NOW() - INTERVAL '72 days',  NOW() - INTERVAL '67 days'),
+  (6, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '56 days')::date,  NOW() - INTERVAL '70 days',  NOW() - INTERVAL '65 days'),
+  (7, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '54 days')::date,  NOW() - INTERVAL '68 days',  NOW() - INTERVAL '63 days'),
+  (8, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '52 days')::date,  NOW() - INTERVAL '66 days',  NOW() - INTERVAL '61 days'),
+  (1, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '50 days')::date,  NOW() - INTERVAL '64 days',  NOW() - INTERVAL '59 days'),
+  (2, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '48 days')::date,  NOW() - INTERVAL '62 days',  NOW() - INTERVAL '57 days'),
+  -- Month 5 (2 months ago): 8 FULFILLED + 4 SHIPPED
+  (3, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '44 days')::date,  NOW() - INTERVAL '58 days',  NOW() - INTERVAL '53 days'),
+  (5, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '42 days')::date,  NOW() - INTERVAL '56 days',  NOW() - INTERVAL '51 days'),
+  (6, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '40 days')::date,  NOW() - INTERVAL '54 days',  NOW() - INTERVAL '49 days'),
+  (7, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '38 days')::date,  NOW() - INTERVAL '52 days',  NOW() - INTERVAL '47 days'),
+  (8, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '36 days')::date,  NOW() - INTERVAL '50 days',  NOW() - INTERVAL '45 days'),
+  (1, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '34 days')::date,  NOW() - INTERVAL '48 days',  NOW() - INTERVAL '43 days'),
+  (2, 1, 'FULFILLED', 'USD', (NOW() - INTERVAL '32 days')::date,  NOW() - INTERVAL '46 days',  NOW() - INTERVAL '41 days'),
+  (3, 2, 'FULFILLED', 'USD', (NOW() - INTERVAL '30 days')::date,  NOW() - INTERVAL '44 days',  NOW() - INTERVAL '39 days'),
+  (5, 1, 'SHIPPED',   'USD', (NOW() - INTERVAL '26 days')::date,  NOW() - INTERVAL '40 days',  NOW() - INTERVAL '38 days'),
+  (6, 2, 'SHIPPED',   'USD', (NOW() - INTERVAL '24 days')::date,  NOW() - INTERVAL '38 days',  NOW() - INTERVAL '36 days'),
+  (7, 1, 'SHIPPED',   'USD', (NOW() - INTERVAL '22 days')::date,  NOW() - INTERVAL '36 days',  NOW() - INTERVAL '34 days'),
+  (8, 2, 'SHIPPED',   'USD', (NOW() - INTERVAL '20 days')::date,  NOW() - INTERVAL '34 days',  NOW() - INTERVAL '32 days'),
+  -- Month 6 (current): 4 CONFIRMED + 3 SHIPPED + 3 DRAFT
+  (1, 1, 'CONFIRMED', 'USD', (NOW() + INTERVAL '14 days')::date,  NOW() - INTERVAL '28 days',  NOW() - INTERVAL '27 days'),
+  (2, 2, 'CONFIRMED', 'USD', (NOW() + INTERVAL '18 days')::date,  NOW() - INTERVAL '24 days',  NOW() - INTERVAL '23 days'),
+  (3, 1, 'CONFIRMED', 'USD', (NOW() + INTERVAL '22 days')::date,  NOW() - INTERVAL '20 days',  NOW() - INTERVAL '19 days'),
+  (5, 2, 'CONFIRMED', 'USD', (NOW() + INTERVAL '26 days')::date,  NOW() - INTERVAL '16 days',  NOW() - INTERVAL '15 days'),
+  (6, 1, 'SHIPPED',   'USD', (NOW() + INTERVAL '7 days')::date,   NOW() - INTERVAL '14 days',  NOW() - INTERVAL '12 days'),
+  (7, 2, 'SHIPPED',   'USD', (NOW() + INTERVAL '9 days')::date,   NOW() - INTERVAL '12 days',  NOW() - INTERVAL '10 days'),
+  (8, 1, 'SHIPPED',   'USD', (NOW() + INTERVAL '11 days')::date,  NOW() - INTERVAL '10 days',  NOW() - INTERVAL '8 days'),
+  (1, 2, 'DRAFT',     'USD', NULL,                                 NOW() - INTERVAL '8 days',   NOW() - INTERVAL '8 days'),
+  (2, 1, 'DRAFT',     'USD', NULL,                                 NOW() - INTERVAL '6 days',   NOW() - INTERVAL '6 days'),
+  (3, 2, 'DRAFT',     'USD', NULL,                                 NOW() - INTERVAL '4 days',   NOW() - INTERVAL '4 days');
 
 -- ── Order Items ───────────────────────────────────────────────────────────────
 INSERT INTO order_items (order_id, product_id, quantity, unit_price, currency) VALUES
-  -- Order 1 (FULFILLED, Blue Bottle Kailua): total = 5×2800 + 2×4200 + 10×950 = 31900
-  (1,  1,  5,  2800, 'USD'),
-  (1,  3,  2,  4200, 'USD'),
-  (1,  7, 10,   950, 'USD'),
-  -- Order 2 (SHIPPED, Ritual Coffee):       total = 8×2400 + 3×3600 + 8×600  = 34800
-  (2,  2,  8,  2400, 'USD'),
-  (2,  4,  3,  3600, 'USD'),
-  (2,  8,  8,   600, 'USD'),
-  -- Order 3 (CONFIRMED, Verve Coffee):      total = 3×2800 + 4×1400 + 12×800 = 23600
-  (3,  1,  3,  2800, 'USD'),
-  (3,  5,  4,  1400, 'USD'),
-  (3,  9, 12,   800, 'USD'),
-  -- Order 4 (DRAFT, Blue Bottle Kailua):    total = 10×2400 + 6×2200 = 37200
-  (4,  2, 10,  2400, 'USD'),
-  (4,  6,  6,  2200, 'USD'),
-  -- Order 5 (FULFILLED, Verve Coffee):      total = 1×120000 + 2×2400 = 124800
-  (5, 10,  1, 120000, 'USD'),
-  (5, 12,  2,   2400, 'USD');
+  (1,  1, 10, 2800, 'USD'), (1, 13,  4, 4200, 'USD'), (1, 29, 20,  950, 'USD'),
+  (2,  2, 12, 2400, 'USD'), (2, 14,  6, 3600, 'USD'), (2, 32, 15,  600, 'USD'),
+  (3,  1,  8, 2800, 'USD'), (3, 13,  3, 4200, 'USD'), (3, 30, 10, 1100, 'USD'),
+  (4,  7, 15, 2000, 'USD'), (4, 14,  4, 3600, 'USD'), (4, 29, 12,  950, 'USD'),
+  (5,  2, 10, 2400, 'USD'), (5, 13,  5, 4200, 'USD'), (5, 34, 20,  450, 'USD'),
+  (6, 10,  8, 2400, 'USD'), (6, 16,  3, 4800, 'USD'), (6, 29, 15,  950, 'USD'),
+  (7,  1,  5, 2800, 'USD'), (7, 21, 10, 1400, 'USD'), (7, 35, 30,  380, 'USD'),
+  (8,  3, 10, 2200, 'USD'), (8, 17,  4, 4000, 'USD'), (8, 55,  6, 2400, 'USD'),
+  (9,  1, 12, 2800, 'USD'), (9, 14,  5, 3600, 'USD'), (9, 30,  8, 1100, 'USD'),
+  (10, 2, 15, 2400, 'USD'), (10, 13, 4, 4200, 'USD'), (10, 33, 12, 700, 'USD'),
+  (11, 4,  6, 3200, 'USD'), (11, 19, 3, 5200, 'USD'), (11, 39, 10, 800, 'USD'),
+  (12, 7, 20, 2000, 'USD'), (12, 14, 6, 3600, 'USD'), (12, 29, 20, 950, 'USD'),
+  (13, 10, 10, 2400, 'USD'), (13, 13, 6, 4200, 'USD'), (13, 34, 30, 450, 'USD'),
+  (14, 2,  8, 2400, 'USD'), (14, 15, 4, 3400, 'USD'), (14, 30, 10, 1100, 'USD'),
+  (15, 1, 15, 2800, 'USD'), (15, 16, 3, 4800, 'USD'), (15, 31,  8, 1250, 'USD'),
+  (16, 3, 12, 2200, 'USD'), (16, 13, 5, 4200, 'USD'), (16, 32, 20,  600, 'USD'),
+  (17, 5,  8, 2600, 'USD'), (17, 14, 4, 3600, 'USD'), (17, 55,  4, 2400, 'USD'),
+  (18, 10, 12, 2400, 'USD'), (18, 17, 3, 4000, 'USD'), (18, 29, 15, 950, 'USD'),
+  (19, 2, 18, 2400, 'USD'), (19, 13, 6, 4200, 'USD'), (19, 30, 12, 1100, 'USD'),
+  (20, 1, 10, 2800, 'USD'), (20, 15, 3, 3400, 'USD'), (20, 34, 25,  450, 'USD'),
+  (21, 7, 15, 2000, 'USD'), (21, 14, 5, 3600, 'USD'), (21, 35, 20,  380, 'USD'),
+  (22, 4,  5, 3200, 'USD'), (22, 16, 4, 4800, 'USD'), (22, 29, 18,  950, 'USD'),
+  (23, 10, 14, 2400, 'USD'), (23, 13, 6, 4200, 'USD'), (23, 33, 15, 700, 'USD'),
+  (24, 3, 10, 2200, 'USD'), (24, 19, 2, 5200, 'USD'), (24, 39,  8,  800, 'USD'),
+  (25, 1, 12, 2800, 'USD'), (25, 14, 4, 3600, 'USD'), (25, 55,  5, 2400, 'USD'),
+  (26, 2, 10, 2400, 'USD'), (26, 17, 5, 4000, 'USD'), (26, 30, 10, 1100, 'USD'),
+  (27, 5, 10, 2600, 'USD'), (27, 13, 4, 4200, 'USD'), (27, 29, 20,  950, 'USD'),
+  (28, 10, 8, 2400, 'USD'), (28, 15, 5, 3400, 'USD'), (28, 32, 15,  600, 'USD'),
+  (29, 7, 20, 2000, 'USD'), (29, 16, 3, 4800, 'USD'), (29, 34, 20,  450, 'USD'),
+  (30, 1,  6, 2800, 'USD'), (30, 14, 6, 3600, 'USD'), (30, 56,  8, 1800, 'USD'),
+  (31, 2, 15, 2400, 'USD'), (31, 13, 5, 4200, 'USD'), (31, 29, 15,  950, 'USD'),
+  (32, 4,  8, 3200, 'USD'), (32, 14, 4, 3600, 'USD'), (32, 30, 12, 1100, 'USD'),
+  (33, 10, 12, 2400, 'USD'), (33, 17, 4, 4000, 'USD'), (33, 55,  6, 2400, 'USD'),
+  (34, 1, 14, 2800, 'USD'), (34, 13, 6, 4200, 'USD'), (34, 31, 10, 1250, 'USD'),
+  (35, 7, 18, 2000, 'USD'), (35, 15, 5, 3400, 'USD'), (35, 33, 15,  700, 'USD'),
+  (36, 2, 12, 2400, 'USD'), (36, 16, 3, 4800, 'USD'), (36, 32, 20,  600, 'USD'),
+  (37, 5, 10, 2600, 'USD'), (37, 14, 4, 3600, 'USD'), (37, 29, 20,  950, 'USD'),
+  (38, 3,  8, 2200, 'USD'), (38, 13, 6, 4200, 'USD'), (38, 35, 30,  380, 'USD'),
+  (39, 10, 10, 2400, 'USD'), (39, 19, 3, 5200, 'USD'), (39, 30,  8, 1100, 'USD'),
+  (40, 1, 16, 2800, 'USD'), (40, 14, 5, 3600, 'USD'), (40, 55,  5, 2400, 'USD'),
+  (41, 2, 14, 2400, 'USD'), (41, 17, 4, 4000, 'USD'), (41, 29, 15,  950, 'USD'),
+  (42, 4,  6, 3200, 'USD'), (42, 13, 6, 4200, 'USD'), (42, 34, 20,  450, 'USD'),
+  (43, 7, 12, 2000, 'USD'), (43, 15, 3, 3400, 'USD'), (43, 32, 15,  600, 'USD'),
+  (44, 10, 15, 2400, 'USD'), (44, 16, 3, 4800, 'USD'), (44, 30, 10, 1100, 'USD'),
+  (45, 1, 15, 2800, 'USD'), (45, 14, 5, 3600, 'USD'), (45, 29, 20,  950, 'USD'),
+  (46, 2, 12, 2400, 'USD'), (46, 13, 4, 4200, 'USD'), (46, 30, 10, 1100, 'USD'),
+  (47, 5, 10, 2600, 'USD'), (47, 15, 4, 3400, 'USD'), (47, 55,  5, 2400, 'USD'),
+  (48, 10, 10, 2400, 'USD'), (48, 17, 4, 4000, 'USD'), (48, 34, 20,  450, 'USD'),
+  (49, 3,  8, 2200, 'USD'), (49, 14, 6, 3600, 'USD'), (49, 29, 15,  950, 'USD'),
+  (50, 7, 15, 2000, 'USD'), (50, 16, 3, 4800, 'USD'), (50, 32, 20,  600, 'USD'),
+  (51, 4,  6, 3200, 'USD'), (51, 13, 5, 4200, 'USD'), (51, 35, 25,  380, 'USD'),
+  (52, 2, 10, 2400, 'USD'), (52, 14, 4, 3600, 'USD'), (52, 56,  6, 1800, 'USD'),
+  (53, 1, 12, 2800, 'USD'), (53, 15, 3, 3400, 'USD'), (53, 30,  8, 1100, 'USD'),
+  (54, 10, 14, 2400, 'USD'), (54, 13, 6, 4200, 'USD'), (54, 29, 20,  950, 'USD'),
+  (55, 7, 10, 2000, 'USD'), (55, 17, 4, 4000, 'USD'), (55, 55,  6, 2400, 'USD'),
+  (56, 2, 15, 2400, 'USD'), (56, 14, 5, 3600, 'USD'), (56, 33, 12,  700, 'USD'),
+  (57, 1, 10, 2800, 'USD'), (57, 13, 4, 4200, 'USD'), (57, 29, 15,  950, 'USD'),
+  (58, 2, 12, 2400, 'USD'), (58, 14, 6, 3600, 'USD'), (58, 30, 10, 1100, 'USD'),
+  (59, 4,  8, 3200, 'USD'), (59, 16, 3, 4800, 'USD'), (59, 32, 20,  600, 'USD'),
+  (60, 10, 10, 2400, 'USD'), (60, 15, 4, 3400, 'USD'), (60, 34, 20,  450, 'USD'),
+  (61, 7, 15, 2000, 'USD'), (61, 13, 5, 4200, 'USD'), (61, 29, 20,  950, 'USD'),
+  (62, 2,  8, 2400, 'USD'), (62, 17, 3, 4000, 'USD'), (62, 55,  4, 2400, 'USD'),
+  (63, 1,  6, 2800, 'USD'), (63, 14, 3, 3600, 'USD'), (63, 30,  8, 1100, 'USD'),
+  (64, 3, 10, 2200, 'USD'), (64, 13, 4, 4200, 'USD'), (64, 29, 12,  950, 'USD'),
+  (65, 10, 8, 2400, 'USD'), (65, 16, 2, 4800, 'USD'), (65, 32, 15,  600, 'USD'),
+  (66, 2, 12, 2400, 'USD'), (66, 15, 3, 3400, 'USD'), (66, 35, 20,  380, 'USD');
 
--- ── Invoices (IDs 1–4, non-DRAFT orders only) ────────────────────────────────
-INSERT INTO invoices (order_id, client_id, invoice_number, total_amount, currency, status, due_date, sent_at, paid_at, created_at, updated_at) VALUES
-  (1, 1, 'INV-0001',  31900, 'USD', 'PAID',      '2026-02-14', '2026-01-17 09:00:00', '2026-01-30 11:00:00', '2026-01-17 09:00:00', '2026-01-30 11:00:00'),
-  (2, 2, 'INV-0002',  34800, 'USD', 'SENT',      '2026-03-22', '2026-02-22 10:00:00',  NULL,                 '2026-02-22 10:00:00', '2026-02-22 10:00:00'),
-  (3, 3, 'INV-0003',  23600, 'USD', 'FINALIZED', '2026-04-10',  NULL,                  NULL,                 '2026-03-11 10:00:00', '2026-03-11 10:00:00'),
-  (5, 3, 'INV-0004', 124800, 'USD', 'PAID',      '2026-05-05', '2026-04-07 08:00:00', '2026-04-20 15:00:00', '2026-04-07 08:00:00', '2026-04-20 15:00:00');
+-- ── Invoices (orders 1-63, no DRAFTs) ────────────────────────────────────────
+INSERT INTO invoices (order_id, client_id, invoice_number, total_amount, currency, status, due_date, stripe_invoice_id, stripe_hosted_url, sent_at, paid_at, created_at, updated_at) VALUES
+  (1,  1,'INV-0001', 63800,'USD','PAID',    (NOW()-INTERVAL '145 days')::date,'in_demo_1', 'https://invoice.stripe.com/demo/1', NOW()-INTERVAL '174 days',NOW()-INTERVAL '160 days',NOW()-INTERVAL '174 days',NOW()-INTERVAL '160 days'),
+  (2,  2,'INV-0002', 59400,'USD','PAID',    (NOW()-INTERVAL '143 days')::date,'in_demo_2', 'https://invoice.stripe.com/demo/2', NOW()-INTERVAL '172 days',NOW()-INTERVAL '158 days',NOW()-INTERVAL '172 days',NOW()-INTERVAL '158 days'),
+  (3,  3,'INV-0003', 46000,'USD','PAID',    (NOW()-INTERVAL '141 days')::date,'in_demo_3', 'https://invoice.stripe.com/demo/3', NOW()-INTERVAL '170 days',NOW()-INTERVAL '156 days',NOW()-INTERVAL '170 days',NOW()-INTERVAL '156 days'),
+  (4,  5,'INV-0004', 55800,'USD','PAID',    (NOW()-INTERVAL '139 days')::date,'in_demo_4', 'https://invoice.stripe.com/demo/4', NOW()-INTERVAL '168 days',NOW()-INTERVAL '154 days',NOW()-INTERVAL '168 days',NOW()-INTERVAL '154 days'),
+  (5,  6,'INV-0005', 54000,'USD','PAID',    (NOW()-INTERVAL '137 days')::date,'in_demo_5', 'https://invoice.stripe.com/demo/5', NOW()-INTERVAL '166 days',NOW()-INTERVAL '152 days',NOW()-INTERVAL '166 days',NOW()-INTERVAL '152 days'),
+  (6,  7,'INV-0006', 47850,'USD','PAID',    (NOW()-INTERVAL '135 days')::date,'in_demo_6', 'https://invoice.stripe.com/demo/6', NOW()-INTERVAL '164 days',NOW()-INTERVAL '150 days',NOW()-INTERVAL '164 days',NOW()-INTERVAL '150 days'),
+  (7,  8,'INV-0007', 39400,'USD','PAID',    (NOW()-INTERVAL '133 days')::date,'in_demo_7', 'https://invoice.stripe.com/demo/7', NOW()-INTERVAL '162 days',NOW()-INTERVAL '148 days',NOW()-INTERVAL '162 days',NOW()-INTERVAL '148 days'),
+  (8,  1,'INV-0008', 52400,'USD','PAID',    (NOW()-INTERVAL '131 days')::date,'in_demo_8', 'https://invoice.stripe.com/demo/8', NOW()-INTERVAL '160 days',NOW()-INTERVAL '146 days',NOW()-INTERVAL '160 days',NOW()-INTERVAL '146 days'),
+  (9,  2,'INV-0009', 60400,'USD','PAID',    (NOW()-INTERVAL '118 days')::date,'in_demo_9', 'https://invoice.stripe.com/demo/9', NOW()-INTERVAL '147 days',NOW()-INTERVAL '133 days',NOW()-INTERVAL '147 days',NOW()-INTERVAL '133 days'),
+  (10, 3,'INV-0010', 61200,'USD','PAID',    (NOW()-INTERVAL '116 days')::date,'in_demo_10','https://invoice.stripe.com/demo/10',NOW()-INTERVAL '145 days',NOW()-INTERVAL '131 days',NOW()-INTERVAL '145 days',NOW()-INTERVAL '131 days'),
+  (11, 5,'INV-0011', 42800,'USD','PAID',    (NOW()-INTERVAL '114 days')::date,'in_demo_11','https://invoice.stripe.com/demo/11',NOW()-INTERVAL '143 days',NOW()-INTERVAL '129 days',NOW()-INTERVAL '143 days',NOW()-INTERVAL '129 days'),
+  (12, 6,'INV-0012', 80600,'USD','PAID',    (NOW()-INTERVAL '112 days')::date,'in_demo_12','https://invoice.stripe.com/demo/12',NOW()-INTERVAL '141 days',NOW()-INTERVAL '127 days',NOW()-INTERVAL '141 days',NOW()-INTERVAL '127 days'),
+  (13, 7,'INV-0013', 62700,'USD','PAID',    (NOW()-INTERVAL '110 days')::date,'in_demo_13','https://invoice.stripe.com/demo/13',NOW()-INTERVAL '139 days',NOW()-INTERVAL '125 days',NOW()-INTERVAL '139 days',NOW()-INTERVAL '125 days'),
+  (14, 8,'INV-0014', 43800,'USD','PAID',    (NOW()-INTERVAL '108 days')::date,'in_demo_14','https://invoice.stripe.com/demo/14',NOW()-INTERVAL '137 days',NOW()-INTERVAL '123 days',NOW()-INTERVAL '137 days',NOW()-INTERVAL '123 days'),
+  (15, 1,'INV-0015', 66400,'USD','PAID',    (NOW()-INTERVAL '106 days')::date,'in_demo_15','https://invoice.stripe.com/demo/15',NOW()-INTERVAL '135 days',NOW()-INTERVAL '121 days',NOW()-INTERVAL '135 days',NOW()-INTERVAL '121 days'),
+  (16, 2,'INV-0016', 59400,'USD','PAID',    (NOW()-INTERVAL '104 days')::date,'in_demo_16','https://invoice.stripe.com/demo/16',NOW()-INTERVAL '133 days',NOW()-INTERVAL '119 days',NOW()-INTERVAL '133 days',NOW()-INTERVAL '119 days'),
+  (17, 3,'INV-0017', 44800,'USD','PAID',    (NOW()-INTERVAL '102 days')::date,'in_demo_17','https://invoice.stripe.com/demo/17',NOW()-INTERVAL '131 days',NOW()-INTERVAL '117 days',NOW()-INTERVAL '131 days',NOW()-INTERVAL '117 days'),
+  (18, 5,'INV-0018', 55050,'USD','PAID',    (NOW()-INTERVAL '100 days')::date,'in_demo_18','https://invoice.stripe.com/demo/18',NOW()-INTERVAL '129 days',NOW()-INTERVAL '115 days',NOW()-INTERVAL '129 days',NOW()-INTERVAL '115 days'),
+  (19, 6,'INV-0019', 81600,'USD','PAID',    (NOW()-INTERVAL '88 days')::date, 'in_demo_19','https://invoice.stripe.com/demo/19',NOW()-INTERVAL '117 days',NOW()-INTERVAL '103 days',NOW()-INTERVAL '117 days',NOW()-INTERVAL '103 days'),
+  (20, 7,'INV-0020', 49450,'USD','PAID',    (NOW()-INTERVAL '86 days')::date, 'in_demo_20','https://invoice.stripe.com/demo/20',NOW()-INTERVAL '115 days',NOW()-INTERVAL '101 days',NOW()-INTERVAL '115 days',NOW()-INTERVAL '101 days'),
+  (21, 8,'INV-0021', 55600,'USD','PAID',    (NOW()-INTERVAL '84 days')::date, 'in_demo_21','https://invoice.stripe.com/demo/21',NOW()-INTERVAL '113 days',NOW()-INTERVAL '99 days', NOW()-INTERVAL '113 days',NOW()-INTERVAL '99 days'),
+  (22, 1,'INV-0022', 52300,'USD','PAID',    (NOW()-INTERVAL '82 days')::date, 'in_demo_22','https://invoice.stripe.com/demo/22',NOW()-INTERVAL '111 days',NOW()-INTERVAL '97 days', NOW()-INTERVAL '111 days',NOW()-INTERVAL '97 days'),
+  (23, 2,'INV-0023', 69300,'USD','PAID',    (NOW()-INTERVAL '80 days')::date, 'in_demo_23','https://invoice.stripe.com/demo/23',NOW()-INTERVAL '109 days',NOW()-INTERVAL '95 days', NOW()-INTERVAL '109 days',NOW()-INTERVAL '95 days'),
+  (24, 3,'INV-0024', 38800,'USD','PAID',    (NOW()-INTERVAL '78 days')::date, 'in_demo_24','https://invoice.stripe.com/demo/24',NOW()-INTERVAL '107 days',NOW()-INTERVAL '93 days', NOW()-INTERVAL '107 days',NOW()-INTERVAL '93 days'),
+  (25, 5,'INV-0025', 60000,'USD','PAID',    (NOW()-INTERVAL '76 days')::date, 'in_demo_25','https://invoice.stripe.com/demo/25',NOW()-INTERVAL '105 days',NOW()-INTERVAL '91 days', NOW()-INTERVAL '105 days',NOW()-INTERVAL '91 days'),
+  (26, 6,'INV-0026', 55000,'USD','PAID',    (NOW()-INTERVAL '74 days')::date, 'in_demo_26','https://invoice.stripe.com/demo/26',NOW()-INTERVAL '103 days',NOW()-INTERVAL '89 days', NOW()-INTERVAL '103 days',NOW()-INTERVAL '89 days'),
+  (27, 7,'INV-0027', 61800,'USD','PAID',    (NOW()-INTERVAL '72 days')::date, 'in_demo_27','https://invoice.stripe.com/demo/27',NOW()-INTERVAL '101 days',NOW()-INTERVAL '87 days', NOW()-INTERVAL '101 days',NOW()-INTERVAL '87 days'),
+  (28, 8,'INV-0028', 45200,'USD','PAID',    (NOW()-INTERVAL '70 days')::date, 'in_demo_28','https://invoice.stripe.com/demo/28',NOW()-INTERVAL '99 days', NOW()-INTERVAL '85 days', NOW()-INTERVAL '99 days', NOW()-INTERVAL '85 days'),
+  (29, 1,'INV-0029', 63400,'USD','PAID',    (NOW()-INTERVAL '68 days')::date, 'in_demo_29','https://invoice.stripe.com/demo/29',NOW()-INTERVAL '97 days', NOW()-INTERVAL '83 days', NOW()-INTERVAL '97 days', NOW()-INTERVAL '83 days'),
+  (30, 2,'INV-0030', 52800,'USD','PAID',    (NOW()-INTERVAL '66 days')::date, 'in_demo_30','https://invoice.stripe.com/demo/30',NOW()-INTERVAL '95 days', NOW()-INTERVAL '81 days', NOW()-INTERVAL '95 days', NOW()-INTERVAL '81 days'),
+  (31, 3,'INV-0031', 71250,'USD','PAID',    (NOW()-INTERVAL '58 days')::date, 'in_demo_31','https://invoice.stripe.com/demo/31',NOW()-INTERVAL '87 days', NOW()-INTERVAL '73 days', NOW()-INTERVAL '87 days', NOW()-INTERVAL '73 days'),
+  (32, 5,'INV-0032', 53200,'USD','PAID',    (NOW()-INTERVAL '56 days')::date, 'in_demo_32','https://invoice.stripe.com/demo/32',NOW()-INTERVAL '85 days', NOW()-INTERVAL '71 days', NOW()-INTERVAL '85 days', NOW()-INTERVAL '71 days'),
+  (33, 6,'INV-0033', 59200,'USD','PAID',    (NOW()-INTERVAL '54 days')::date, 'in_demo_33','https://invoice.stripe.com/demo/33',NOW()-INTERVAL '83 days', NOW()-INTERVAL '69 days', NOW()-INTERVAL '83 days', NOW()-INTERVAL '69 days'),
+  (34, 7,'INV-0034', 76900,'USD','PAID',    (NOW()-INTERVAL '52 days')::date, 'in_demo_34','https://invoice.stripe.com/demo/34',NOW()-INTERVAL '81 days', NOW()-INTERVAL '67 days', NOW()-INTERVAL '81 days', NOW()-INTERVAL '67 days'),
+  (35, 8,'INV-0035', 63500,'USD','PAID',    (NOW()-INTERVAL '50 days')::date, 'in_demo_35','https://invoice.stripe.com/demo/35',NOW()-INTERVAL '79 days', NOW()-INTERVAL '65 days', NOW()-INTERVAL '79 days', NOW()-INTERVAL '65 days'),
+  (36, 1,'INV-0036', 55200,'USD','PAID',    (NOW()-INTERVAL '48 days')::date, 'in_demo_36','https://invoice.stripe.com/demo/36',NOW()-INTERVAL '77 days', NOW()-INTERVAL '63 days', NOW()-INTERVAL '77 days', NOW()-INTERVAL '63 days'),
+  (37, 2,'INV-0037', 59400,'USD','PAID',    (NOW()-INTERVAL '46 days')::date, 'in_demo_37','https://invoice.stripe.com/demo/37',NOW()-INTERVAL '75 days', NOW()-INTERVAL '61 days', NOW()-INTERVAL '75 days', NOW()-INTERVAL '61 days'),
+  (38, 3,'INV-0038', 54200,'USD','PAID',    (NOW()-INTERVAL '44 days')::date, 'in_demo_38','https://invoice.stripe.com/demo/38',NOW()-INTERVAL '73 days', NOW()-INTERVAL '59 days', NOW()-INTERVAL '73 days', NOW()-INTERVAL '59 days'),
+  (39, 5,'INV-0039', 48400,'USD','PAID',    (NOW()-INTERVAL '42 days')::date, 'in_demo_39','https://invoice.stripe.com/demo/39',NOW()-INTERVAL '71 days', NOW()-INTERVAL '57 days', NOW()-INTERVAL '71 days', NOW()-INTERVAL '57 days'),
+  (40, 6,'INV-0040', 74800,'USD','PAID',    (NOW()-INTERVAL '40 days')::date, 'in_demo_40','https://invoice.stripe.com/demo/40',NOW()-INTERVAL '69 days', NOW()-INTERVAL '55 days', NOW()-INTERVAL '69 days', NOW()-INTERVAL '55 days'),
+  (41, 7,'INV-0041', 63850,'USD','PAID',    (NOW()-INTERVAL '38 days')::date, 'in_demo_41','https://invoice.stripe.com/demo/41',NOW()-INTERVAL '67 days', NOW()-INTERVAL '53 days', NOW()-INTERVAL '67 days', NOW()-INTERVAL '53 days'),
+  (42, 8,'INV-0042', 53400,'USD','PAID',    (NOW()-INTERVAL '36 days')::date, 'in_demo_42','https://invoice.stripe.com/demo/42',NOW()-INTERVAL '65 days', NOW()-INTERVAL '51 days', NOW()-INTERVAL '65 days', NOW()-INTERVAL '51 days'),
+  (43, 1,'INV-0043', 43200,'USD','OVERDUE', (NOW()-INTERVAL '50 days')::date, 'in_demo_43','https://invoice.stripe.com/demo/43',NOW()-INTERVAL '63 days', NULL,                      NOW()-INTERVAL '63 days',NOW()-INTERVAL '63 days'),
+  (44, 2,'INV-0044', 61400,'USD','OVERDUE', (NOW()-INTERVAL '48 days')::date, 'in_demo_44','https://invoice.stripe.com/demo/44',NOW()-INTERVAL '61 days', NULL,                      NOW()-INTERVAL '61 days',NOW()-INTERVAL '61 days'),
+  (45, 3,'INV-0045', 79000,'USD','PAID',    (NOW()-INTERVAL '28 days')::date, 'in_demo_45','https://invoice.stripe.com/demo/45',NOW()-INTERVAL '57 days', NOW()-INTERVAL '43 days', NOW()-INTERVAL '57 days', NOW()-INTERVAL '43 days'),
+  (46, 5,'INV-0046', 56600,'USD','PAID',    (NOW()-INTERVAL '26 days')::date, 'in_demo_46','https://invoice.stripe.com/demo/46',NOW()-INTERVAL '55 days', NOW()-INTERVAL '41 days', NOW()-INTERVAL '55 days', NOW()-INTERVAL '41 days'),
+  (47, 6,'INV-0047', 51600,'USD','PAID',    (NOW()-INTERVAL '24 days')::date, 'in_demo_47','https://invoice.stripe.com/demo/47',NOW()-INTERVAL '53 days', NOW()-INTERVAL '39 days', NOW()-INTERVAL '53 days', NOW()-INTERVAL '39 days'),
+  (48, 7,'INV-0048', 49000,'USD','PAID',    (NOW()-INTERVAL '22 days')::date, 'in_demo_48','https://invoice.stripe.com/demo/48',NOW()-INTERVAL '51 days', NOW()-INTERVAL '37 days', NOW()-INTERVAL '51 days', NOW()-INTERVAL '37 days'),
+  (49, 8,'INV-0049', 53450,'USD','PAID',    (NOW()-INTERVAL '20 days')::date, 'in_demo_49','https://invoice.stripe.com/demo/49',NOW()-INTERVAL '49 days', NOW()-INTERVAL '35 days', NOW()-INTERVAL '49 days', NOW()-INTERVAL '35 days'),
+  (50, 1,'INV-0050', 56400,'USD','PAID',    (NOW()-INTERVAL '18 days')::date, 'in_demo_50','https://invoice.stripe.com/demo/50',NOW()-INTERVAL '47 days', NOW()-INTERVAL '33 days', NOW()-INTERVAL '47 days', NOW()-INTERVAL '33 days'),
+  (51, 2,'INV-0051', 49700,'USD','PAID',    (NOW()-INTERVAL '16 days')::date, 'in_demo_51','https://invoice.stripe.com/demo/51',NOW()-INTERVAL '45 days', NOW()-INTERVAL '31 days', NOW()-INTERVAL '45 days', NOW()-INTERVAL '31 days'),
+  (52, 3,'INV-0052', 49200,'USD','PAID',    (NOW()-INTERVAL '14 days')::date, 'in_demo_52','https://invoice.stripe.com/demo/52',NOW()-INTERVAL '43 days', NOW()-INTERVAL '29 days', NOW()-INTERVAL '43 days', NOW()-INTERVAL '29 days'),
+  (53, 5,'INV-0053', 52600,'USD','SENT',    (NOW()-INTERVAL '10 days')::date, 'in_demo_53','https://invoice.stripe.com/demo/53',NOW()-INTERVAL '39 days', NULL,                      NOW()-INTERVAL '39 days',NOW()-INTERVAL '39 days'),
+  (54, 6,'INV-0054', 77800,'USD','SENT',    (NOW()-INTERVAL '8 days')::date,  'in_demo_54','https://invoice.stripe.com/demo/54',NOW()-INTERVAL '37 days', NULL,                      NOW()-INTERVAL '37 days',NOW()-INTERVAL '37 days'),
+  (55, 7,'INV-0055', 50400,'USD','SENT',    (NOW()-INTERVAL '6 days')::date,  'in_demo_55','https://invoice.stripe.com/demo/55',NOW()-INTERVAL '35 days', NULL,                      NOW()-INTERVAL '35 days',NOW()-INTERVAL '35 days'),
+  (56, 8,'INV-0056', 62400,'USD','SENT',    (NOW()-INTERVAL '4 days')::date,  'in_demo_56','https://invoice.stripe.com/demo/56',NOW()-INTERVAL '33 days', NULL,                      NOW()-INTERVAL '33 days',NOW()-INTERVAL '33 days'),
+  (57, 1,'INV-0057', 59050,'USD','FINALIZED',(NOW()+INTERVAL '2 days')::date,  NULL, NULL, NULL, NULL, NOW()-INTERVAL '27 days',NOW()-INTERVAL '27 days'),
+  (58, 2,'INV-0058', 61400,'USD','FINALIZED',(NOW()+INTERVAL '6 days')::date,  NULL, NULL, NULL, NULL, NOW()-INTERVAL '23 days',NOW()-INTERVAL '23 days'),
+  (59, 3,'INV-0059', 52000,'USD','FINALIZED',(NOW()+INTERVAL '10 days')::date, NULL, NULL, NULL, NULL, NOW()-INTERVAL '19 days',NOW()-INTERVAL '19 days'),
+  (60, 5,'INV-0060', 46600,'USD','FINALIZED',(NOW()+INTERVAL '14 days')::date, NULL, NULL, NULL, NULL, NOW()-INTERVAL '15 days',NOW()-INTERVAL '15 days'),
+  (61, 6,'INV-0061', 70000,'USD','SENT',    (NOW()+INTERVAL '16 days')::date, 'in_demo_61','https://invoice.stripe.com/demo/61',NOW()-INTERVAL '13 days', NULL,                      NOW()-INTERVAL '13 days',NOW()-INTERVAL '13 days'),
+  (62, 7,'INV-0062', 40800,'USD','SENT',    (NOW()+INTERVAL '18 days')::date, 'in_demo_62','https://invoice.stripe.com/demo/62',NOW()-INTERVAL '11 days', NULL,                      NOW()-INTERVAL '11 days',NOW()-INTERVAL '11 days'),
+  (63, 8,'INV-0063', 36400,'USD','SENT',    (NOW()+INTERVAL '20 days')::date, 'in_demo_63','https://invoice.stripe.com/demo/63',NOW()-INTERVAL '9 days',  NULL,                      NOW()-INTERVAL '9 days', NOW()-INTERVAL '9 days');
 
--- ── Payments (PAID invoices only: invoice IDs 1 and 4) ───────────────────────
-INSERT INTO payments (invoice_id, stripe_payment_id, amount, currency, payment_method, status, created_at) VALUES
-  (1, 'pi_test_001',  31900, 'USD', 'STRIPE_CARD', 'SUCCEEDED', '2026-01-30 11:00:00'),
-  (4, 'pi_test_002', 124800, 'USD', 'STRIPE_CARD', 'SUCCEEDED', '2026-04-20 15:00:00');
+-- ── Payments ──────────────────────────────────────────────────────────────────
+INSERT INTO payments (invoice_id, stripe_invoice_id, stripe_payment_id, amount, currency, payment_method, status, created_at) VALUES
+  (1,  'in_demo_1',  'pi_demo_1',   63800,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '160 days'),
+  (2,  'in_demo_2',  'pi_demo_2',   59400,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '158 days'),
+  (3,  'in_demo_3',  'pi_demo_3',   46000,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '156 days'),
+  (4,  'in_demo_4',  'pi_demo_4',   55800,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '154 days'),
+  (5,  'in_demo_5',  'pi_demo_5',   54000,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '152 days'),
+  (6,  'in_demo_6',  'pi_demo_6',   47850,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '150 days'),
+  (7,  'in_demo_7',  'pi_demo_7',   39400,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '148 days'),
+  (8,  'in_demo_8',  'pi_demo_8',   52400,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '146 days'),
+  (9,  'in_demo_9',  'pi_demo_9',   60400,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '133 days'),
+  (10, 'in_demo_10', 'pi_demo_10',  61200,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '131 days'),
+  (11, 'in_demo_11', 'pi_demo_11',  42800,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '129 days'),
+  (12, 'in_demo_12', 'pi_demo_12',  80600,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '127 days'),
+  (13, 'in_demo_13', 'pi_demo_13',  62700,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '125 days'),
+  (14, 'in_demo_14', 'pi_demo_14',  43800,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '123 days'),
+  (15, 'in_demo_15', 'pi_demo_15',  66400,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '121 days'),
+  (16, 'in_demo_16', 'pi_demo_16',  59400,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '119 days'),
+  (17, 'in_demo_17', 'pi_demo_17',  44800,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '117 days'),
+  (18, 'in_demo_18', 'pi_demo_18',  55050,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '115 days'),
+  (19, 'in_demo_19', 'pi_demo_19',  81600,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '103 days'),
+  (20, 'in_demo_20', 'pi_demo_20',  49450,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '101 days'),
+  (21, 'in_demo_21', 'pi_demo_21',  55600,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '99 days'),
+  (22, 'in_demo_22', 'pi_demo_22',  52300,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '97 days'),
+  (23, 'in_demo_23', 'pi_demo_23',  69300,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '95 days'),
+  (24, 'in_demo_24', 'pi_demo_24',  38800,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '93 days'),
+  (25, 'in_demo_25', 'pi_demo_25',  60000,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '91 days'),
+  (26, 'in_demo_26', 'pi_demo_26',  55000,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '89 days'),
+  (27, 'in_demo_27', 'pi_demo_27',  61800,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '87 days'),
+  (28, 'in_demo_28', 'pi_demo_28',  45200,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '85 days'),
+  (29, 'in_demo_29', 'pi_demo_29',  63400,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '83 days'),
+  (30, 'in_demo_30', 'pi_demo_30',  52800,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '81 days'),
+  (31, 'in_demo_31', 'pi_demo_31',  71250,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '73 days'),
+  (32, 'in_demo_32', 'pi_demo_32',  53200,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '71 days'),
+  (33, 'in_demo_33', 'pi_demo_33',  59200,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '69 days'),
+  (34, 'in_demo_34', 'pi_demo_34',  76900,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '67 days'),
+  (35, 'in_demo_35', 'pi_demo_35',  63500,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '65 days'),
+  (36, 'in_demo_36', 'pi_demo_36',  55200,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '63 days'),
+  (37, 'in_demo_37', 'pi_demo_37',  59400,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '61 days'),
+  (38, 'in_demo_38', 'pi_demo_38',  54200,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '59 days'),
+  (39, 'in_demo_39', 'pi_demo_39',  48400,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '57 days'),
+  (40, 'in_demo_40', 'pi_demo_40',  74800,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '55 days'),
+  (41, 'in_demo_41', 'pi_demo_41',  63850,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '53 days'),
+  (42, 'in_demo_42', 'pi_demo_42',  53400,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '51 days'),
+  (45, 'in_demo_45', 'pi_demo_45',  79000,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '43 days'),
+  (46, 'in_demo_46', 'pi_demo_46',  56600,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '41 days'),
+  (47, 'in_demo_47', 'pi_demo_47',  51600,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '39 days'),
+  (48, 'in_demo_48', 'pi_demo_48',  49000,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '37 days'),
+  (49, 'in_demo_49', 'pi_demo_49',  53450,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '35 days'),
+  (50, 'in_demo_50', 'pi_demo_50',  56400,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '33 days'),
+  (51, 'in_demo_51', 'pi_demo_51',  49700,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '31 days'),
+  (52, 'in_demo_52', 'pi_demo_52',  49200,'USD','STRIPE_CARD','SUCCEEDED',NOW()-INTERVAL '29 days'),
+  -- FAILED attempts on OVERDUE invoices
+  (43, 'in_demo_43', 'pi_demo_fail_1', 43200,'USD','STRIPE_CARD','FAILED',NOW()-INTERVAL '58 days'),
+  (43, 'in_demo_43', 'pi_demo_fail_2', 43200,'USD','STRIPE_CARD','FAILED',NOW()-INTERVAL '54 days'),
+  (44, 'in_demo_44', 'pi_demo_fail_3', 61400,'USD','STRIPE_CARD','FAILED',NOW()-INTERVAL '56 days'),
+  -- REFUNDED
+  (7,  'in_demo_7',  'pi_demo_ref_1', -39400,'USD','STRIPE_CARD','REFUNDED',NOW()-INTERVAL '130 days'),
+  (20, 'in_demo_20', 'pi_demo_ref_2', -24725,'USD','STRIPE_CARD','REFUNDED',NOW()-INTERVAL '85 days');

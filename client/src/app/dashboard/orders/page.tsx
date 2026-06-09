@@ -29,7 +29,7 @@ export default function OrdersPage() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const admin = isAdmin(getAuthUser() ?? { roles: [] } as never)
+  const [admin, setAdmin] = useState(false)
   const skipFirstSync = useRef(true)
 
   const [activeTab, setActiveTab] = useState<OrderStatus | 'ALL'>(
@@ -55,7 +55,9 @@ export default function OrdersPage() {
 
   // Fetch users once on mount (admin only)
   useEffect(() => {
-    if (!admin) return
+    const a = isAdmin(getAuthUser() ?? { roles: [] } as never)
+    setAdmin(a)
+    if (!a) return
     getUsers().then(setUsers).catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 

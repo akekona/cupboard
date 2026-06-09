@@ -42,7 +42,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const admin = isAdmin(getAuthUser() ?? { roles: [] } as never)
+  const [admin, setAdmin] = useState(false)
 
   const [product, setProduct] = useState<Product | null>(null)
   const [suppliers, setSuppliers] = useState<ProductSupplierInfo[]>([])
@@ -67,6 +67,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
   }
 
+  useEffect(() => { setAdmin(isAdmin(getAuthUser() ?? { roles: [] } as never)) }, [])
   useEffect(() => { load() }, [id])
 
   async function handleDelete() {
