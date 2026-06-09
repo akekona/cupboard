@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -36,14 +37,18 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     @Query("SELECT COUNT(i) FROM Invoice i WHERE i.status IN ('SENT', 'OVERDUE')")
     int countOutstanding();
 
-    @Query("SELECT COUNT(i) FROM Invoice i WHERE i.status = 'OVERDUE'")
-    int countOverdue();
+    @Query("SELECT COUNT(i) FROM Invoice i WHERE " +
+            "i.status = 'OVERDUE' OR " +
+            "(i.status IN ('SENT', 'FINALIZED') AND i.dueDate < :today)")
+    int countOverdue(@Param("today") LocalDate today);
 
     @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM Invoice i WHERE i.status IN ('SENT', 'OVERDUE')")
     Long getTotalOutstanding();
 
-    @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM Invoice i WHERE i.status = 'OVERDUE'")
-    Long getTotalOverdue();
+    @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM Invoice i WHERE " +
+            "i.status = 'OVERDUE' OR " +
+            "(i.status IN ('SENT', 'FINALIZED') AND i.dueDate < :today)")
+    Long getTotalOverdue(@Param("today") LocalDate today);
 
     @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM Invoice i " +
             "WHERE i.status = 'PAID' AND i.paidAt >= :startOfMonth")
