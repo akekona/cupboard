@@ -6,6 +6,8 @@
 > insights.
 >
 > Demo: https://cupboard-pearl.vercel.app/
+>
+> Demo login credentials: [Ref here](https://github.com/akekona/cupboard#demo-credentials)
 
 ---
 
