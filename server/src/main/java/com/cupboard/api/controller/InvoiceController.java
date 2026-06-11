@@ -57,6 +57,12 @@ public class InvoiceController {
         return ApiResponse.ok(invoiceService.sendInvoice(id));
     }
 
+    @PatchMapping("/{id}/mark-paid")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<InvoiceResponse> markPaid(@PathVariable Long id) {
+        return ApiResponse.ok(invoiceService.markPaid(id));
+    }
+
     @PatchMapping("/{id}/overdue")
     public ApiResponse<InvoiceResponse> markOverdue(@PathVariable Long id) {
         return ApiResponse.ok(invoiceService.markOverdue(id));

@@ -142,6 +142,18 @@ public class InvoiceService {
     }
 
     @Transactional
+    public InvoiceResponse markPaid(Long id) {
+        Invoice invoice = findOrThrow(id);
+        if (invoice.getStatus() != InvoiceStatus.SENT && invoice.getStatus() != InvoiceStatus.OVERDUE) {
+            throw new ValidationException("Invoice must be SENT or OVERDUE to mark as paid (current: " + invoice.getStatus() + ")");
+        }
+        invoice.setStatus(InvoiceStatus.PAID);
+        invoice.setPaidAt(LocalDateTime.now());
+        invoice.setUpdatedAt(LocalDateTime.now());
+        return toResponse(invoiceRepository.save(invoice));
+    }
+
+    @Transactional
     public InvoiceResponse markOverdue(Long id) {
         Invoice invoice = findOrThrow(id);
         if (invoice.getStatus() != InvoiceStatus.SENT) {
