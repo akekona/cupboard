@@ -163,7 +163,7 @@ export default function Sidebar({ user, mobileOpen, onMobileClose }: Props) {
         )}>
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-7 h-7 bg-[#3B6D11] rounded-md flex items-center justify-center flex-shrink-0">
-              <Box className="w-4 h-4 text-white" strokeWidth={1.75} />
+              <Coffee className="w-4 h-4 text-white" strokeWidth={1.75} />
             </div>
             {!collapsed && (
               <span className="text-sm font-semibold text-gray-900 tracking-tight truncate">Cupboard</span>
