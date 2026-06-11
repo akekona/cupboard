@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Box } from 'lucide-react'
+import { Coffee } from 'lucide-react'
 import { api } from '@/lib/api'
 import { setAuthCookie } from '@/lib/auth'
 import type { LoginRequest, LoginResponse } from '@/types/auth'
@@ -37,7 +37,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="flex items-center justify-center gap-2.5">
           <div className="w-9 h-9 bg-[#3B6D11] rounded-lg flex items-center justify-center flex-shrink-0">
-            <Box className="w-5 h-5 text-white" strokeWidth={1.75} />
+            <Coffee className="w-5 h-5 text-white" strokeWidth={1.75} />
           </div>
           <span className="text-xl font-semibold text-gray-900 tracking-tight">Cupboard</span>
         </div>
