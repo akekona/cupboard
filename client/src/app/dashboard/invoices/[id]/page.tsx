@@ -2,14 +2,16 @@
 
 import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, ExternalLink, Loader2 } from 'lucide-react'
+import { ChevronRight, ExternalLink, Loader2, Pencil } from 'lucide-react'
 import { getInvoiceById, finalizeInvoice, sendInvoice, markPaid, refundInvoice } from '@/lib/api/invoices'
 import { formatCurrency } from '@/lib/currency'
 import { getInvoiceStatusColor, formatInvoiceDate, formatDateTime, isOverdue } from '@/lib/invoiceHelpers'
 import { getAuthUser, isAdmin } from '@/lib/auth'
 import { ConfirmModal } from '@/components/modals/ConfirmModal'
+import { EditInvoiceModal } from '@/components/modals/EditInvoiceModal'
 import { StatusPill } from '@/components/common/StatusPill'
 import { FieldLabelText } from '@/components/ui/typography'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { InvoiceStepper } from '@/components/pages/invoices/InvoiceStepper'
 import { NotFound } from '@/components/common/NotFound'
 import type { Invoice, InvoiceStatus } from '@/types/invoices'
@@ -26,13 +28,15 @@ const ACTION_CONFIG: Record<ActionKey, { title: string; variant: 'default' | 'da
 export default function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const admin = isAdmin(getAuthUser() ?? { roles: [] } as never)
+  const [admin, setAdmin] = useState(false)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [pendingAction, setPendingAction] = useState<ActionKey | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [showEdit, setShowEdit] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
@@ -41,6 +45,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
     finally { setLoading(false) }
   }
 
+  useEffect(() => { setAdmin(isAdmin(getAuthUser() ?? { roles: [] } as never)) }, [])
   useEffect(() => { load() }, [id])
 
   async function handleAction() {
@@ -121,7 +126,20 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
 
             <div className="w-full lg:w-[300px] flex-shrink-0 space-y-4">
               <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Invoice info</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Invoice info</h2>
+                  {invoice.status === 'DRAFT' && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button onClick={() => setShowEdit(true)}
+                          className="p-1 text-gray-400 rounded hover:bg-gray-100 hover:text-gray-600">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Edit due date and notes</TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
                 <div><FieldLabelText>Client</FieldLabelText><button onClick={() => router.push(`/dashboard/clients/${invoice.client.id}`)} className="text-sm text-[#3B6D11] hover:underline">{invoice.client.name}</button></div>
                 {invoice.client.contactEmail && <div><FieldLabelText>Email</FieldLabelText><span className="text-sm text-gray-700">{invoice.client.contactEmail}</span></div>}
                 <div><FieldLabelText>Due date</FieldLabelText><span className={`text-sm ${isOverdue(invoice.dueDate, invoice.status as InvoiceStatus) ? 'text-red-600 font-medium' : 'text-gray-700'}`}>{invoice.dueDate ? formatInvoiceDate(invoice.dueDate) : '—'}</span></div>
@@ -150,6 +168,24 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
         <ConfirmModal open={!!pendingAction} onClose={() => { setPendingAction(null); setActionError(null) }} onConfirm={handleAction}
           title={ACTION_CONFIG[pendingAction].title} description={ACTION_CONFIG[pendingAction].description(invoice)}
           confirmLabel={ACTION_CONFIG[pendingAction].confirmLabel} variant={ACTION_CONFIG[pendingAction].variant} isLoading={actionLoading} />
+      )}
+
+      {showEdit && invoice && (
+        <EditInvoiceModal
+          invoice={invoice}
+          onClose={() => setShowEdit(false)}
+          onSave={() => {
+            load()
+            setToast('Invoice updated')
+            setTimeout(() => setToast(null), 3000)
+          }}
+        />
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2.5 bg-gray-900 text-white text-sm rounded-lg shadow-lg">
+          {toast}
+        </div>
       )}
     </div>
   )
