@@ -23,7 +23,7 @@ export function ProductsTable({ products, loading, isAdmin, onEdit, onDelete }: 
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/50">
-              {['SKU', 'Product', 'Category', 'Stock', 'Price', 'Status'].map(h => (
+              {['SKU', 'Product', 'Category', 'Stock / Threshold', 'Price', 'Status'].map(h => (
                 <th key={h} className="text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">{h}</th>
               ))}
               {isAdmin && <th className="text-right text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Actions</th>}
