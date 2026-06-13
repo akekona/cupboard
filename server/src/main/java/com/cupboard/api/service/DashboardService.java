@@ -13,11 +13,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -49,7 +52,7 @@ public class DashboardService {
         Long revenueLastMonth = paymentRepository.sumSucceededBetween(startOfLastMonth, startOfThisMonth);
         long ordersThisMonth = orderRepository.countByCreatedAtBetween(startOfThisMonth, startOfNextMonth);
         long ordersLastMonth = orderRepository.countByCreatedAtBetween(startOfLastMonth, startOfThisMonth);
-        int lowStockCount = productRepository.findAllByDeletedAtIsNullAndStockQuantityLessThanEqualReorderThreshold().size();
+        int lowStockCount = productRepository.countLowStock();
         Long outstandingInvoicesAmount = invoiceRepository.getTotalOutstanding();
         int outstandingInvoicesCount = invoiceRepository.countOutstanding();
         int overdueInvoicesCount = invoiceRepository.countOverdue();
@@ -66,14 +69,22 @@ public class DashboardService {
         );
     }
 
+    // Single GROUP BY query instead of one query per month
     List<RevenueByMonth> buildRevenueByMonth(LocalDateTime startOfThisMonth, int months) {
+        LocalDateTime startDate = startOfThisMonth.minusMonths(months - 1);
+        Map<String, Long> byMonth = paymentRepository.sumSucceededGroupedByMonth(startDate)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> row[0] + "-" + row[1],
+                        row -> ((Number) row[2]).longValue()
+                ));
+
         List<RevenueByMonth> result = new ArrayList<>();
         for (int i = months - 1; i >= 0; i--) {
             LocalDateTime monthStart = startOfThisMonth.minusMonths(i);
-            LocalDateTime monthEnd = monthStart.plusMonths(1);
-            Long revenue = paymentRepository.sumSucceededBetween(monthStart, monthEnd);
+            String key = (double) monthStart.getYear() + "-" + (double) monthStart.getMonthValue();
             String label = monthStart.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
-            result.add(new RevenueByMonth(label, revenue));
+            result.add(new RevenueByMonth(label, byMonth.getOrDefault(key, 0L)));
         }
         return result;
     }

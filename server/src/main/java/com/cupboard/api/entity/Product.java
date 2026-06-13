@@ -59,5 +59,6 @@ public class Product {
     private LocalDateTime deletedAt;
 
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+    @org.hibernate.annotations.BatchSize(size = 50)
     private List<ProductSupplier> productSuppliers = new ArrayList<>();
 }

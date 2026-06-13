@@ -22,7 +22,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findAllByStatus(OrderStatus status);
 
-    @Query("SELECT o FROM Order o WHERE " +
+    @Query(value = "SELECT o FROM Order o JOIN FETCH o.client JOIN FETCH o.createdBy WHERE " +
+            "(:clientId IS NULL OR o.client.id = :clientId) AND " +
+            "(:status IS NULL OR o.status = :status) AND " +
+            "(:createdById IS NULL OR o.createdBy.id = :createdById) AND " +
+            "(:clientSearch IS NULL OR LOWER(o.client.name) LIKE :clientSearch) AND " +
+            "(:orderNumber IS NULL OR CAST(o.id AS string) LIKE :orderNumber)",
+           countQuery = "SELECT COUNT(o) FROM Order o WHERE " +
             "(:clientId IS NULL OR o.client.id = :clientId) AND " +
             "(:status IS NULL OR o.status = :status) AND " +
             "(:createdById IS NULL OR o.createdBy.id = :createdById) AND " +
@@ -60,4 +66,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT o FROM Order o JOIN FETCH o.client WHERE o.status IN :statuses ORDER BY o.createdAt DESC")
     List<Order> findRecentByStatusIn(@Param("statuses") List<OrderStatus> statuses, Pageable pageable);
+
+    @Query("SELECT FUNCTION('EXTRACT', 'YEAR', o.createdAt), FUNCTION('EXTRACT', 'MONTH', o.createdAt), COUNT(o) " +
+            "FROM Order o " +
+            "WHERE o.createdAt >= :startDate " +
+            "GROUP BY FUNCTION('EXTRACT', 'YEAR', o.createdAt), FUNCTION('EXTRACT', 'MONTH', o.createdAt)")
+    List<Object[]> countGroupedByMonth(@Param("startDate") LocalDateTime startDate);
 }
