@@ -21,12 +21,17 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     List<Invoice> findAllByClientId(Long clientId);
     List<Invoice> findAllByStatus(InvoiceStatus status);
 
-    @Query("SELECT i FROM Invoice i WHERE " +
+    @Query(value = "SELECT i FROM Invoice i JOIN FETCH i.client JOIN FETCH i.order WHERE " +
             "(:clientId IS NULL OR i.client.id = :clientId) AND " +
             "(:status IS NULL OR i.status = :status) AND " +
             "(:searchLike IS NULL OR LOWER(i.invoiceNumber) LIKE :searchLike " +
             "  OR LOWER(i.client.name) LIKE :searchLike) " +
-            "ORDER BY i.createdAt DESC")
+            "ORDER BY i.createdAt DESC",
+           countQuery = "SELECT COUNT(i) FROM Invoice i WHERE " +
+            "(:clientId IS NULL OR i.client.id = :clientId) AND " +
+            "(:status IS NULL OR i.status = :status) AND " +
+            "(:searchLike IS NULL OR LOWER(i.invoiceNumber) LIKE :searchLike " +
+            "  OR LOWER(i.client.name) LIKE :searchLike)")
     Page<Invoice> findAllWithFilters(
             @Param("clientId") Long clientId,
             @Param("status") InvoiceStatus status,

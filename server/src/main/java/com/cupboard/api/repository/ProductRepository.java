@@ -44,4 +44,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT p FROM Product p WHERE p.deletedAt IS NULL AND LOWER(p.sku) IN :skus")
     List<Product> findBySkus(@Param("skus") List<String> skus);
+
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.deletedAt IS NULL AND p.stockQuantity <= p.reorderThreshold")
+    int countLowStock();
 }

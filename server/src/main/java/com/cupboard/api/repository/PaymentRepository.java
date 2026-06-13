@@ -17,17 +17,27 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     List<Payment> findAllByInvoiceId(Long invoiceId);
 
-    @Query("SELECT p FROM Payment p WHERE " +
+    @Query(value = "SELECT p FROM Payment p JOIN FETCH p.invoice inv JOIN FETCH inv.client WHERE " +
             "(:status IS NULL OR p.status = :status) AND " +
             "(:paymentMethod IS NULL OR p.paymentMethod = :paymentMethod) AND " +
             "(:search IS NULL OR (" +
             "  LOWER(p.stripePaymentId) LIKE :search OR " +
             "  LOWER(p.stripeInvoiceId) LIKE :search OR " +
-            "  LOWER(p.invoice.client.name) LIKE :search OR " +
-            "  LOWER(p.invoice.invoiceNumber) LIKE :search)) AND " +
+            "  LOWER(inv.client.name) LIKE :search OR " +
+            "  LOWER(inv.invoiceNumber) LIKE :search)) AND " +
             "p.createdAt >= :startDate AND " +
             "p.createdAt < :endDate " +
-            "ORDER BY p.createdAt DESC")
+            "ORDER BY p.createdAt DESC",
+           countQuery = "SELECT COUNT(p) FROM Payment p JOIN p.invoice inv WHERE " +
+            "(:status IS NULL OR p.status = :status) AND " +
+            "(:paymentMethod IS NULL OR p.paymentMethod = :paymentMethod) AND " +
+            "(:search IS NULL OR (" +
+            "  LOWER(p.stripePaymentId) LIKE :search OR " +
+            "  LOWER(p.stripeInvoiceId) LIKE :search OR " +
+            "  LOWER(inv.client.name) LIKE :search OR " +
+            "  LOWER(inv.invoiceNumber) LIKE :search)) AND " +
+            "p.createdAt >= :startDate AND " +
+            "p.createdAt < :endDate")
     Page<Payment> findAllFiltered(
             @Param("status") PaymentStatus status,
             @Param("paymentMethod") PaymentMethod paymentMethod,
@@ -59,4 +69,10 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             "GROUP BY i.client.id, i.client.name " +
             "ORDER BY SUM(p.amount) DESC")
     List<Object[]> findTopClientsByRevenue(Pageable pageable);
+
+    @Query("SELECT FUNCTION('EXTRACT', 'YEAR', p.createdAt), FUNCTION('EXTRACT', 'MONTH', p.createdAt), COALESCE(SUM(p.amount), 0) " +
+            "FROM Payment p " +
+            "WHERE p.status = 'SUCCEEDED' AND p.createdAt >= :startDate " +
+            "GROUP BY FUNCTION('EXTRACT', 'YEAR', p.createdAt), FUNCTION('EXTRACT', 'MONTH', p.createdAt)")
+    List<Object[]> sumSucceededGroupedByMonth(@Param("startDate") LocalDateTime startDate);
 }

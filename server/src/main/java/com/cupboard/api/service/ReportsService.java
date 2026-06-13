@@ -1,7 +1,6 @@
 package com.cupboard.api.service;
 
 import com.cupboard.api.dto.dashboard.*;
-import com.cupboard.api.enums.OrderStatus;
 import com.cupboard.api.repository.OrderItemRepository;
 import com.cupboard.api.repository.OrderRepository;
 import com.cupboard.api.repository.PaymentRepository;
@@ -15,6 +14,8 @@ import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ReportsService {
@@ -60,14 +61,22 @@ public class ReportsService {
                 .toList();
     }
 
+    // Single GROUP BY query instead of one COUNT query per month
     private List<OrderVolumeByMonth> buildOrderVolumeByMonth(LocalDateTime startOfThisMonth) {
+        LocalDateTime startDate = startOfThisMonth.minusMonths(11);
+        Map<String, Long> byMonth = orderRepository.countGroupedByMonth(startDate)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> row[0] + "-" + row[1],
+                        row -> ((Number) row[2]).longValue()
+                ));
+
         List<OrderVolumeByMonth> result = new ArrayList<>();
         for (int i = 11; i >= 0; i--) {
             LocalDateTime monthStart = startOfThisMonth.minusMonths(i);
-            LocalDateTime monthEnd = monthStart.plusMonths(1);
-            long count = orderRepository.countByCreatedAtBetween(monthStart, monthEnd);
+            String key = (double) monthStart.getYear() + "-" + (double) monthStart.getMonthValue();
             String label = monthStart.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
-            result.add(new OrderVolumeByMonth(label, count));
+            result.add(new OrderVolumeByMonth(label, byMonth.getOrDefault(key, 0L)));
         }
         return result;
     }
