@@ -67,9 +67,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o JOIN FETCH o.client WHERE o.status IN :statuses ORDER BY o.createdAt DESC")
     List<Order> findRecentByStatusIn(@Param("statuses") List<OrderStatus> statuses, Pageable pageable);
 
-    @Query("SELECT FUNCTION('EXTRACT', 'YEAR', o.createdAt), FUNCTION('EXTRACT', 'MONTH', o.createdAt), COUNT(o) " +
+    @Query("SELECT YEAR(o.createdAt), MONTH(o.createdAt), COUNT(o) " +
             "FROM Order o " +
             "WHERE o.createdAt >= :startDate " +
-            "GROUP BY FUNCTION('EXTRACT', 'YEAR', o.createdAt), FUNCTION('EXTRACT', 'MONTH', o.createdAt)")
+            "GROUP BY YEAR(o.createdAt), MONTH(o.createdAt)")
     List<Object[]> countGroupedByMonth(@Param("startDate") LocalDateTime startDate);
 }

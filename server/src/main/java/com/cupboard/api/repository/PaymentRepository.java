@@ -70,9 +70,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             "ORDER BY SUM(p.amount) DESC")
     List<Object[]> findTopClientsByRevenue(Pageable pageable);
 
-    @Query("SELECT FUNCTION('EXTRACT', 'YEAR', p.createdAt), FUNCTION('EXTRACT', 'MONTH', p.createdAt), COALESCE(SUM(p.amount), 0) " +
+    @Query("SELECT YEAR(p.createdAt), MONTH(p.createdAt), COALESCE(SUM(p.amount), 0) " +
             "FROM Payment p " +
             "WHERE p.status = 'SUCCEEDED' AND p.createdAt >= :startDate " +
-            "GROUP BY FUNCTION('EXTRACT', 'YEAR', p.createdAt), FUNCTION('EXTRACT', 'MONTH', p.createdAt)")
+            "GROUP BY YEAR(p.createdAt), MONTH(p.createdAt)")
     List<Object[]> sumSucceededGroupedByMonth(@Param("startDate") LocalDateTime startDate);
 }
