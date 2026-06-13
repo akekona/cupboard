@@ -6,6 +6,7 @@ import type {
   ClientDetail,
 } from '@/types/catalog'
 import type { PagedResponse } from '@/types/common'
+import type { RestockSuggestionsResponse } from '@/types/ai'
 
 interface ApiResponse<T> {
   success: boolean
@@ -55,7 +56,7 @@ export const deleteProduct = (id: number) =>
   api.delete<void>(`/api/products/${id}`)
 
 export const getRestockSuggestions = () =>
-  unwrap(api.get<ApiResponse<string>>('/api/ai/restock-suggestions'))
+  unwrap(api.get<ApiResponse<RestockSuggestionsResponse>>('/api/ai/restock-suggestions'))
 
 // ── Product Suppliers ─────────────────────────────────────────────────────────
 
