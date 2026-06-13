@@ -54,6 +54,9 @@ export const updateProduct = (id: number, data: Record<string, unknown>) =>
 export const deleteProduct = (id: number) =>
   api.delete<void>(`/api/products/${id}`)
 
+export const getRestockSuggestions = () =>
+  unwrap(api.get<ApiResponse<string>>('/api/ai/restock-suggestions'))
+
 // ── Product Suppliers ─────────────────────────────────────────────────────────
 
 export const setProductSupplierPreferred = (productSupplierId: number, preferred: boolean) =>
