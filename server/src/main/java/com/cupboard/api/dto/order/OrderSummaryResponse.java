@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 
 public record OrderSummaryResponse(
         Long id,
+        String orderNumber,
         Long clientId,
         String clientName,
         String createdByName,

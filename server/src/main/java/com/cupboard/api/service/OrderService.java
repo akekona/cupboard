@@ -2,6 +2,7 @@ package com.cupboard.api.service;
 
 import com.cupboard.api.dto.PagedResponse;
 import com.cupboard.api.dto.order.*;
+import com.cupboard.api.util.OrderNumberFormatter;
 import com.cupboard.api.entity.*;
 import com.cupboard.api.enums.InvoiceStatus;
 import com.cupboard.api.enums.OrderStatus;
@@ -255,6 +256,7 @@ public class OrderService {
 
         return new OrderResponse(
                 o.getId(),
+                OrderNumberFormatter.format(o.getId()),
                 new OrderResponse.ClientInfo(
                         o.getClient().getId(), o.getClient().getName(), o.getClient().getContactEmail()),
                 new OrderResponse.UserInfo(
@@ -279,6 +281,7 @@ public class OrderService {
                 .sum();
         return new OrderSummaryResponse(
                 o.getId(),
+                OrderNumberFormatter.format(o.getId()),
                 o.getClient().getId(),
                 o.getClient().getName(),
                 o.getCreatedBy().getFirstName() + " " + o.getCreatedBy().getLastName(),

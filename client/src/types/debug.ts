@@ -11,6 +11,7 @@ export interface OrderItemDebugInfo {
 
 export interface OrderDebugInfo {
   id: number
+  orderNumber: string
   status: OrderStatus
   clientName: string
   clientId: number

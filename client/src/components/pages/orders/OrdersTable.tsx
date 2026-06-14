@@ -73,7 +73,7 @@ export function OrdersTable({ orders, loading, onRowClick, sortBy, sortDir, onSo
             )}
             {!loading && orders.map(o => (
               <tr key={o.id} onClick={() => onRowClick(o.id)} className="hover:bg-gray-50/50 cursor-pointer transition-colors">
-                <td className="px-4 py-3.5 font-medium text-[#3B6D11]">#{o.id}</td>
+                <td className="px-4 py-3.5 font-medium text-[#3B6D11]">{o.orderNumber}</td>
                 <td className="px-4 py-3.5 text-gray-900">{o.clientName}</td>
                 <td className="px-4 py-3.5">
                   <StatusPill status={o.status} colorClass={getOrderStatusColor(o.status)} />

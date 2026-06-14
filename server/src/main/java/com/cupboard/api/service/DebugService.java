@@ -10,6 +10,7 @@ import com.cupboard.api.exception.EntityNotFoundException;
 import com.cupboard.api.repository.InvoiceRepository;
 import com.cupboard.api.repository.OrderRepository;
 import com.cupboard.api.repository.PaymentRepository;
+import com.cupboard.api.util.OrderNumberFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,9 +30,16 @@ public class DebugService {
     @Autowired private PaymentRepository paymentRepository;
 
     @Transactional(readOnly = true)
-    public OrderDebugResponse getOrderDebugInfo(Long orderId) {
+    public OrderDebugResponse getOrderDebugInfo(String orderIdentifier) {
+        Long orderId;
+        try {
+            orderId = OrderNumberFormatter.parse(orderIdentifier);
+        } catch (NumberFormatException e) {
+            throw new EntityNotFoundException("Invalid order identifier: " + orderIdentifier);
+        }
+
         Order order = orderRepository.findByIdWithDetails(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("Order #" + orderId + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Order " + orderIdentifier + " not found"));
 
         long totalAmount = order.getOrderItems().stream()
                 .mapToLong(oi -> oi.getUnitPrice() * oi.getQuantity())
@@ -48,6 +56,7 @@ public class DebugService {
 
         OrderDebugInfo orderInfo = new OrderDebugInfo(
                 order.getId(),
+                OrderNumberFormatter.format(order.getId()),
                 order.getStatus().name(),
                 order.getClient().getName(),
                 order.getClient().getId(),

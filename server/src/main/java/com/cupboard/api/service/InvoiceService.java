@@ -10,7 +10,9 @@ import com.cupboard.api.enums.PaymentStatus;
 import com.cupboard.api.exception.EntityNotFoundException;
 import com.cupboard.api.exception.ValidationException;
 import com.cupboard.api.repository.InvoiceRepository;
+import com.cupboard.api.repository.OrderItemRepository;
 import com.cupboard.api.repository.PaymentRepository;
+import com.cupboard.api.util.OrderNumberFormatter;
 import com.stripe.model.Customer;
 import com.stripe.model.InvoiceItem;
 import com.stripe.param.CustomerCreateParams;
@@ -31,6 +33,7 @@ import java.util.List;
 public class InvoiceService {
 
     @Autowired private InvoiceRepository invoiceRepository;
+    @Autowired private OrderItemRepository orderItemRepository;
     @Autowired private PaymentRepository paymentRepository;
 
     // ── Queries ───────────────────────────────────────────────────────────────
@@ -108,23 +111,34 @@ public class InvoiceService {
                     .build();
             Customer stripeCustomer = Customer.create(customerParams);
 
+            String orderNumber = OrderNumberFormatter.format(invoice.getOrder().getId());
             InvoiceCreateParams invoiceParams = InvoiceCreateParams.builder()
                     .setCustomer(stripeCustomer.getId())
                     .setCollectionMethod(InvoiceCreateParams.CollectionMethod.SEND_INVOICE)
                     .setDaysUntilDue(30L)
+                    .setDescription("Order " + orderNumber)
                     .putMetadata("cupboard_invoice_id", invoice.getId().toString())
                     .putMetadata("cupboard_invoice_number", invoice.getInvoiceNumber())
+                    .putMetadata("cupboard_order_id", invoice.getOrder().getId().toString())
+                    .putMetadata("cupboard_order_number", orderNumber)
+                    .putMetadata("cupboard_client_id", invoice.getClient().getId().toString())
+                    .putMetadata("cupboard_client_name", invoice.getClient().getName())
+                    .putMetadata("environment", "test")
                     .build();
             com.stripe.model.Invoice stripeInvoice = com.stripe.model.Invoice.create(invoiceParams);
 
-            InvoiceItemCreateParams itemParams = InvoiceItemCreateParams.builder()
-                    .setCustomer(stripeCustomer.getId())
-                    .setInvoice(stripeInvoice.getId())
-                    .setAmount(invoice.getTotalAmount())
-                    .setCurrency(invoice.getCurrency().name().toLowerCase())
-                    .setDescription("Order " + invoice.getOrder().getId() + " — " + invoice.getInvoiceNumber())
-                    .build();
-            InvoiceItem.create(itemParams);
+            String currency = invoice.getCurrency().name().toLowerCase();
+            var orderItems = orderItemRepository.findAllByOrderId(invoice.getOrder().getId());
+            for (var oi : orderItems) {
+                InvoiceItemCreateParams itemParams = InvoiceItemCreateParams.builder()
+                        .setCustomer(stripeCustomer.getId())
+                        .setInvoice(stripeInvoice.getId())
+                        .setAmount((long) oi.getQuantity() * oi.getUnitPrice())
+                        .setCurrency(currency)
+                        .setDescription(oi.getProduct().getName() + " × " + oi.getQuantity())
+                        .build();
+                InvoiceItem.create(itemParams);
+            }
 
             stripeInvoice = stripeInvoice.finalizeInvoice();
             stripeInvoice = stripeInvoice.sendInvoice();
@@ -206,13 +220,27 @@ public class InvoiceService {
     }
 
     private InvoiceResponse toResponse(Invoice i) {
+        List<InvoiceLineItemResponse> lineItems = orderItemRepository
+                .findAllByOrderId(i.getOrder().getId()).stream()
+                .map(oi -> new InvoiceLineItemResponse(
+                        oi.getProduct().getName(),
+                        oi.getProduct().getSku(),
+                        oi.getQuantity(),
+                        oi.getUnitPrice(),
+                        oi.getCurrency(),
+                        (long) oi.getQuantity() * oi.getUnitPrice()
+                ))
+                .toList();
+
         return new InvoiceResponse(
                 i.getId(),
                 i.getInvoiceNumber(),
                 new InvoiceResponse.OrderInfo(
                         i.getOrder().getId(),
+                        OrderNumberFormatter.format(i.getOrder().getId()),
                         i.getOrder().getStatus(),
-                        i.getOrder().getCurrency()),
+                        i.getOrder().getCurrency(),
+                        i.getOrder().getCreatedAt()),
                 new InvoiceResponse.ClientInfo(
                         i.getClient().getId(),
                         i.getClient().getName(),
@@ -220,6 +248,7 @@ public class InvoiceService {
                 i.getTotalAmount(),
                 i.getCurrency(),
                 i.getStatus(),
+                lineItems,
                 i.getDueDate(),
                 i.getStripeInvoiceId(),
                 i.getStripeHostedUrl(),

@@ -17,7 +17,7 @@ public class DebugController {
 
     @GetMapping("/orders/{orderId}")
     public ResponseEntity<ApiResponse<OrderDebugResponse>> getOrderDebugInfo(
-            @PathVariable Long orderId) {
+            @PathVariable String orderId) {
         return ResponseEntity.ok(ApiResponse.ok(debugService.getOrderDebugInfo(orderId)));
     }
 }
