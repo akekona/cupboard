@@ -30,6 +30,7 @@ stripe.secret-key=<your-stripe-secret-key>
 stripe.webhook-secret=<your-stripe-webhook-secret>
 
 # --- Claude API ---
+use.live.ai=${USE_LIVE_AI:false}
 claude.api-key=<your-claude-api-key>
 
 # --- Logging ---

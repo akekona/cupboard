@@ -13,6 +13,7 @@ import { ProductsTable } from '@/components/pages/products/ProductsTable'
 import { ProductSearchCard } from '@/components/pages/products/ProductSearchCard'
 import { ProductFiltersCard, type StockStatus } from '@/components/pages/products/ProductFiltersCard'
 import { ProductFiltersMobile } from '@/components/pages/products/ProductFiltersMobile'
+import { RestockSuggestionsPanel } from '@/components/pages/products/RestockSuggestionsPanel'
 import type { Product, ProductCategory } from '@/types/catalog'
 import type { PagedResponse } from '@/types/common'
 
@@ -165,18 +166,7 @@ export default function ProductsPage() {
         ) : undefined}
       />
 
-      {showAI && (
-        <div className="mb-6 flex items-start gap-3 bg-white border border-gray-200 border-l-4 border-l-[#3B6D11] rounded-lg p-4 shadow-sm">
-          <Sparkles className="w-4 h-4 text-[#3B6D11] mt-0.5 flex-shrink-0" />
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-semibold text-gray-900">Restock suggestions</span>
-              <span className="text-[10px] font-semibold text-white bg-[#3B6D11] px-1.5 py-0.5 rounded-full uppercase tracking-wide">AI</span>
-            </div>
-            <p className="text-sm text-gray-500">AI restock suggestions will appear here.</p>
-          </div>
-        </div>
-      )}
+      {showAI && <RestockSuggestionsPanel />}
 
       <ProductSearchCard
         mode={searchMode}

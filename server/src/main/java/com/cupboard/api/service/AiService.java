@@ -1,7 +1,9 @@
 package com.cupboard.api.service;
 
 import com.cupboard.api.entity.Product;
+import com.cupboard.api.entity.ProductSupplier;
 import com.cupboard.api.repository.ProductRepository;
+import com.cupboard.api.repository.ProductSupplierRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,14 +25,15 @@ public class AiService {
     private String claudeApiKey;
 
     @Autowired private ProductRepository productRepository;
+    @Autowired private ProductSupplierRepository productSupplierRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // Toggle this to true when Claude API credits are available
-    private static final boolean USE_LIVE_AI = false;
+    @Value("${use.live.ai:false}")
+    private boolean useLiveAi;
 
     public String getRestockSuggestions() {
-        if (USE_LIVE_AI) {
+        if (useLiveAi) {
             return callClaudeApi();
         }
         return getDemoResponse();
@@ -45,19 +48,44 @@ public class AiService {
         }
 
         String productContext = lowStockProducts.stream()
-            .map(p -> String.format(
-                "- %s (SKU: %s): %d units in stock, reorder threshold: %d, category: %s",
-                p.getName(), p.getSku(), p.getStockQuantity(),
-                p.getReorderThreshold(), p.getCategory()
-            ))
+            .map(p -> {
+                ProductSupplier preferredSupplier = productSupplierRepository
+                    .findByProductIdAndIsPreferredTrue(p.getId())
+                    .orElseGet(() -> productSupplierRepository
+                        .findByProductId(p.getId())
+                        .stream().findFirst().orElse(null));
+
+                return String.format(
+                    "- %s (SKU: %s, category: %s): %d units in stock, " +
+                    "reorder threshold: %d. Preferred supplier: %s " +
+                    "(lead time: %d days, cost: $%.2f/unit)",
+                    p.getName(),
+                    p.getSku(),
+                    p.getCategory(),
+                    p.getStockQuantity(),
+                    p.getReorderThreshold(),
+                    preferredSupplier != null ? preferredSupplier.getSupplier().getName() : "none linked",
+                    preferredSupplier != null ? preferredSupplier.getLeadTimeDays() : 0,
+                    preferredSupplier != null ? preferredSupplier.getCostPrice() / 100.0 : 0.0
+                );
+            })
             .collect(Collectors.joining("\n"));
 
         String prompt = """
-            You are an inventory manager for Cupboard, a cafe supplier platform.
-            Based on the following low stock products, provide concise restock \
-            suggestions. For each product mention: current stock vs threshold,
-            urgency level, and suggested reorder quantity.
-            Keep the response under 150 words and use plain text (no markdown).
+            You are an inventory manager for Cupboard, a B2B cafe \
+            supplier platform. Based on the following low stock \
+            products, provide concise restock recommendations.
+
+            For each product include:
+            - Urgency (critical if at/near 0, otherwise moderate)
+            - Suggested reorder quantity (aim to restock to roughly \
+            2x the reorder threshold)
+            - Which supplier to order from and their lead time
+            - Estimated cost of the suggested reorder
+
+            Keep the total response under 200 words, plain text, \
+            no markdown formatting. Be direct and actionable — \
+            this is read by a busy operations manager.
 
             Low stock products:
             """ + productContext;
