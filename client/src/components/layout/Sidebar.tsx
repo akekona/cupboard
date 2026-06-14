@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Box, LayoutDashboard, ShoppingCart, Receipt, CreditCard,
+  Box, Bug, LayoutDashboard, ShoppingCart, Receipt, CreditCard,
   Truck, Coffee, BarChart2, Users, LogOut,
   ChevronLeft, ChevronRight, X,
 } from 'lucide-react'
@@ -38,6 +38,10 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Users',   href: '/dashboard/users',   icon: Users },
 ]
 
+const DEV_NAV: NavItem[] = [
+  { label: 'Debug order', href: '/dashboard/debug', icon: Bug },
+]
+
 interface Props {
   user: AuthUser | null
   mobileOpen: boolean
@@ -63,6 +67,7 @@ export default function Sidebar({ user, mobileOpen, onMobileClose }: Props) {
   }
 
   const admin = user?.roles.includes('ADMIN') ?? false
+  const dev = admin || (user?.roles.includes('DEVELOPER') ?? false)
   const firstName = user?.firstName ?? ''
   const lastName  = user?.lastName  ?? ''
   const initials  = [firstName[0], lastName[0]].filter(Boolean).join('').toUpperCase()
@@ -208,6 +213,11 @@ export default function Sidebar({ user, mobileOpen, onMobileClose }: Props) {
           <NavSection title="Main"    items={MAIN_NAV} />
           <NavSection title="Catalog" items={CATALOG_NAV} />
           {admin && <NavSection title="Admin" items={ADMIN_NAV} />}
+          {dev && (
+            <div className="border-t border-gray-100 pt-3 mt-3">
+              <NavSection title="Developer" items={DEV_NAV} />
+            </div>
+          )}
         </nav>
 
         {/* User area */}

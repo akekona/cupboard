@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   Box,
+  Bug,
   LayoutDashboard,
   ShoppingCart,
   Receipt,
@@ -41,6 +42,10 @@ const CATALOG_NAV: NavItem[] = [
 const ADMIN_NAV: NavItem[] = [
   { label: 'Reports', href: '/dashboard/reports', icon: BarChart2 },
   { label: 'Users', href: '/dashboard/users', icon: Users },
+]
+
+const DEV_NAV: NavItem[] = [
+  { label: 'Debug', href: '/dashboard/debug', icon: Bug },
 ]
 
 function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
@@ -93,6 +98,7 @@ function NavLinkWrapper({ item }: { item: NavItem }) {
 export default function Sidebar({ user }: { user: AuthUser | null }) {
   const router = useRouter()
   const admin = user?.roles.includes('ADMIN') ?? false
+  const dev = admin || (user?.roles.includes('DEVELOPER') ?? false)
 
   const primaryRole = admin ? 'Admin' : user?.roles.includes('STAFF') ? 'Staff' : ''
   const firstName = user?.firstName ?? ''
@@ -126,6 +132,7 @@ export default function Sidebar({ user }: { user: AuthUser | null }) {
         <NavSection title="Main" items={MAIN_NAV} admin={admin} />
         <NavSection title="Catalog" items={CATALOG_NAV} admin={admin} />
         {admin && <NavSection title="Admin" items={ADMIN_NAV} admin={admin} />}
+        {dev && <NavSection title="Dev tools" items={DEV_NAV} admin={admin} />}
       </nav>
 
       {/* User + logout */}
