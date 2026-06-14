@@ -416,7 +416,7 @@ export default function NewOrderPage() {
           <div className="w-16 h-16 bg-[#EAF3DE] rounded-full flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8 text-[#3B6D11]" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Order #{confirmedOrder.id} confirmed!</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Order {confirmedOrder.orderNumber} confirmed!</h2>
           <p className="text-sm text-gray-500 mb-1">Inventory updated</p>
           {confirmedOrder.invoice && (
             <p className="text-sm text-gray-500 mb-6">

@@ -80,7 +80,7 @@ export function EditOrderModal({ order, onClose, onSuccess }: Props) {
   }
 
   return (
-    <Modal title={`Edit order #${order.id}`} onClose={onClose}>
+    <Modal title={`Edit order ${order.orderNumber}`} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && <p className="text-sm text-red-600">{error}</p>}
 

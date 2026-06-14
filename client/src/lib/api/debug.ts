@@ -13,5 +13,5 @@ async function unwrap<T>(promise: Promise<ApiResponse<T>>): Promise<T> {
   return res.data
 }
 
-export const getOrderDebugInfo = (orderId: number) =>
-  unwrap(api.get<ApiResponse<OrderDebugResponse>>(`/api/debug/orders/${orderId}`))
+export const getOrderDebugInfo = (orderId: string) =>
+  unwrap(api.get<ApiResponse<OrderDebugResponse>>(`/api/debug/orders/${encodeURIComponent(orderId)}`))

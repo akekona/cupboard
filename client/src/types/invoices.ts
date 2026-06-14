@@ -1,6 +1,15 @@
 import type { CurrencyCode } from '@/lib/currency'
 import type { OrderStatus } from '@/types/orders'
 
+export interface InvoiceLineItem {
+  productName: string
+  sku: string
+  quantity: number
+  unitPrice: number
+  currency: CurrencyCode
+  lineTotal: number
+}
+
 export type InvoiceStatus =
   'DRAFT' | 'FINALIZED' | 'SENT' | 'PAID' | 'OVERDUE' | 'REFUNDED'
 
@@ -12,11 +21,12 @@ export type PaymentStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'REFUNDED'
 export interface Invoice {
   id: number
   invoiceNumber: string
-  order: { id: number; status: OrderStatus; currency: CurrencyCode }
+  order: { id: number; orderNumber: string; status: OrderStatus; currency: CurrencyCode; createdAt: string }
   client: { id: number; name: string; contactEmail?: string }
   totalAmount: number
   currency: CurrencyCode
   status: InvoiceStatus
+  lineItems: InvoiceLineItem[]
   dueDate?: string
   stripeInvoiceId?: string
   stripeHostedUrl?: string

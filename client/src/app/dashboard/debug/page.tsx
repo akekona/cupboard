@@ -47,7 +47,7 @@ function DebugResults({ result }: { result: OrderDebugResponse }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Order */}
         <Card>
-          <SectionHeader label={`Order #${order.id}`} />
+          <SectionHeader label={order.orderNumber} />
           <div className="flex items-center gap-2 mb-3">
             <StatusPill status={order.status} colorClass={getOrderStatusColor(order.status)} />
           </div>
@@ -178,7 +178,7 @@ function DebugResults({ result }: { result: OrderDebugResponse }) {
 export default function DebugPage() {
   const router = useRouter()
   const [input, setInput] = useState('')
-  const [searchedId, setSearchedId] = useState<number | null>(null)
+  const [searchedInput, setSearchedInput] = useState<string | null>(null)
   const [result, setResult] = useState<OrderDebugResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [notFound, setNotFound] = useState(false)
@@ -192,13 +192,13 @@ export default function DebugPage() {
   }, [])
 
   function search() {
-    const id = parseInt(input.trim(), 10)
-    if (isNaN(id)) return
-    setSearchedId(id)
+    const query = input.trim()
+    if (!query) return
+    setSearchedInput(query)
     setResult(null)
     setNotFound(false)
     setLoading(true)
-    getOrderDebugInfo(id)
+    getOrderDebugInfo(query)
       .then(setResult)
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false))
@@ -218,11 +218,11 @@ export default function DebugPage() {
       <div className="mb-6 flex gap-2 max-w-sm">
         <input
           ref={inputRef}
-          type="number"
+          type="text"
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Enter order number..."
+          placeholder="Enter order number (e.g. ORD-0073)..."
           className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B6D11]/30 focus:border-[#3B6D11]"
         />
         <button
@@ -234,14 +234,14 @@ export default function DebugPage() {
         </button>
       </div>
 
-      {!loading && !result && !notFound && searchedId === null && (
+      {!loading && !result && !notFound && searchedInput === null && (
         <p className="text-sm text-gray-400">
           Enter an order number above to see its full status across systems.
         </p>
       )}
 
       {!loading && notFound && (
-        <p className="text-sm text-gray-500">Order #{searchedId} not found.</p>
+        <p className="text-sm text-gray-500">Order {searchedInput} not found.</p>
       )}
 
       {!loading && result && <DebugResults result={result} />}

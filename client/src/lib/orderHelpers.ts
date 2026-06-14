@@ -1,5 +1,9 @@
 import type { OrderStatus } from '@/types/orders'
 
+export function formatOrderNumber(id: number): string {
+  return 'ORD-' + String(id).padStart(4, '0')
+}
+
 export function getOrderStatusColor(status: OrderStatus): string {
   switch (status) {
     case 'DRAFT':     return 'bg-gray-100 text-gray-600'

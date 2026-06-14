@@ -25,6 +25,7 @@ export interface OrderInvoiceSummary {
 
 export interface Order {
   id: number
+  orderNumber: string
   client: { id: number; name: string; contactEmail?: string }
   createdBy: { id: number; firstName: string; lastName: string }
   status: OrderStatus
@@ -40,6 +41,7 @@ export interface Order {
 
 export interface OrderSummary {
   id: number
+  orderNumber: string
   clientId: number
   clientName: string
   createdByName: string

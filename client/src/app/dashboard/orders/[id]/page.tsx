@@ -69,7 +69,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-5">
         <button onClick={() => router.push('/dashboard/orders')} className="hover:text-gray-600">Orders</button>
         <ChevronRight className="w-3.5 h-3.5" />
-        <span className="text-gray-700">#{id}</span>
+        <span className="text-gray-700">{order?.orderNumber ?? `#${id}`}</span>
       </div>
 
       {loading ? (
@@ -78,7 +78,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         <>
           <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
             <div>
-              <h1 className="text-xl font-semibold text-gray-900 mb-1">Order #{order.id}</h1>
+              <h1 className="text-xl font-semibold text-gray-900 mb-1">Order {order.orderNumber}</h1>
               <div className="text-sm text-gray-500">{order.client.name}{order.client.contactEmail && <span className="text-gray-400"> · {order.client.contactEmail}</span>}</div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">

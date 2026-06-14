@@ -7,6 +7,7 @@ import { getInvoiceById, finalizeInvoice, sendInvoice, markPaid, refundInvoice }
 import { formatCurrency } from '@/lib/currency'
 import { getInvoiceStatusColor, formatInvoiceDate, formatDateTime, isOverdue } from '@/lib/invoiceHelpers'
 import { getAuthUser, isAdmin } from '@/lib/auth'
+import { formatOrderNumber } from '@/lib/orderHelpers'
 import { ConfirmModal } from '@/components/modals/ConfirmModal'
 import { EditInvoiceModal } from '@/components/modals/EditInvoiceModal'
 import { StatusPill } from '@/components/common/StatusPill'
@@ -107,14 +108,38 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
           <div className="flex gap-5 items-start flex-col lg:flex-row">
             <div className="flex-1 w-full bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-100"><h2 className="text-sm font-semibold text-gray-900">Invoice details</h2></div>
+              <div className="px-5 pt-4 pb-2 flex items-center justify-between">
+                <button
+                  onClick={() => router.push(`/dashboard/orders/${invoice.order.id}`)}
+                  className="text-xs font-medium text-muted-foreground uppercase tracking-wide hover:text-gray-700"
+                >
+                  ORDER {invoice.order.orderNumber}
+                </button>
+                <span className="text-xs text-muted-foreground">{formatInvoiceDate(invoice.order.createdAt)}</span>
+              </div>
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-gray-100 bg-gray-50/50">
-                  {['Description', 'Amount'].map(h => <th key={h} className={`text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3 ${h === 'Amount' ? 'text-right' : 'text-left'}`}>{h}</th>)}
+                  {['Description', 'Qty', 'Unit price', 'Amount'].map(h => (
+                    <th key={h} className={`text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3 ${h === 'Amount' || h === 'Unit price' || h === 'Qty' ? 'text-right' : 'text-left'}`}>{h}</th>
+                  ))}
                 </tr></thead>
-                <tbody><tr>
-                  <td className="px-5 py-4 font-medium text-gray-900">Order #{invoice.order.id} — {invoice.invoiceNumber}</td>
-                  <td className="px-5 py-4 text-right font-medium text-gray-900">{formatCurrency(invoice.totalAmount, invoice.currency)}</td>
-                </tr></tbody>
+                <tbody>
+                  {invoice.lineItems.length > 0 ? invoice.lineItems.map((item, i) => (
+                    <tr key={i} className="border-b border-gray-50 last:border-0">
+                      <td className="px-5 py-3.5 text-gray-900">
+                        <div className="font-medium">{item.productName}</div>
+                        <div className="text-xs text-gray-400">{item.sku}</div>
+                      </td>
+                      <td className="px-5 py-3.5 text-right text-gray-600">{item.quantity}</td>
+                      <td className="px-5 py-3.5 text-right text-gray-600">{formatCurrency(item.unitPrice, item.currency)}</td>
+                      <td className="px-5 py-3.5 text-right font-medium text-gray-900">{formatCurrency(item.lineTotal, item.currency)}</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={4} className="px-5 py-4 text-sm text-gray-400">No line items found.</td>
+                    </tr>
+                  )}
+                </tbody>
               </table>
               <div className="px-5 py-3 border-t border-gray-100 flex justify-end">
                 <div className="text-right">
@@ -156,7 +181,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               )}
               <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
                 <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Order</h2>
-                <div><FieldLabelText>Order</FieldLabelText><button onClick={() => router.push(`/dashboard/orders/${invoice.order.id}`)} className="text-sm text-[#3B6D11] hover:underline">#{invoice.order.id}</button></div>
+                <div><FieldLabelText>Order</FieldLabelText><button onClick={() => router.push(`/dashboard/orders/${invoice.order.id}`)} className="text-sm text-[#3B6D11] hover:underline">{formatOrderNumber(invoice.order.id)}</button></div>
                 <div><FieldLabelText>Status</FieldLabelText><span className="text-xs font-medium text-gray-700 uppercase">{invoice.order.status}</span></div>
               </div>
             </div>

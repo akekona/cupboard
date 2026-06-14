@@ -10,6 +10,7 @@ import java.util.List;
 
 public record OrderResponse(
         Long id,
+        String orderNumber,
         ClientInfo client,
         UserInfo createdBy,
         OrderStatus status,

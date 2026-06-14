@@ -6,6 +6,7 @@ import com.cupboard.api.enums.OrderStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record InvoiceResponse(
         Long id,
@@ -15,6 +16,7 @@ public record InvoiceResponse(
         Long totalAmount,
         Currency currency,
         InvoiceStatus status,
+        List<InvoiceLineItemResponse> lineItems,
         LocalDate dueDate,
         String stripeInvoiceId,
         String stripeHostedUrl,
@@ -24,6 +26,6 @@ public record InvoiceResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
-    public record OrderInfo(Long id, OrderStatus status, Currency currency) {}
+    public record OrderInfo(Long id, String orderNumber, OrderStatus status, Currency currency, LocalDateTime createdAt) {}
     public record ClientInfo(Long id, String name, String contactEmail) {}
 }
